@@ -100,7 +100,7 @@ $kinerja_agen = mysqli_query($koneksi, $query_kinerja);
 
 <body>
     <!-- Wrapper utama: sidebar + konten menggunakan flexbox -->
-    <div class="d-flex">
+    <div class="d-flex" id="main-wrapper">
         <!-- Sertakan komponen sidebar navigasi -->
         <?php require_once 'navbar.php'; ?>
 
@@ -219,53 +219,56 @@ $kinerja_agen = mysqli_query($koneksi, $query_kinerja);
                             <i class="bi bi-bar-chart-line me-2"></i> Kinerja Agen
                         </div>
                         <div class="card-body p-0">
-                            <table class="table table-hover mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>#</th>
-                                        <th>Nama Agen</th>
-                                        <th class="text-center">Total Transaksi</th>
-                                        <th class="text-end">Total Pendapatan</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php
-                                    // Loop untuk menampilkan setiap baris data kinerja agen
-                                    $no = 1;
-                                    while ($baris = mysqli_fetch_assoc($kinerja_agen)):
-                                        ?>
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
                                         <tr>
-                                            <td>
-                                                <?php echo $no++; ?>
-                                            </td>
-                                            <td>
-                                                <i class="bi bi-person-circle me-1 text-muted"></i>
-                                                <?php echo htmlspecialchars($baris['nama_lengkap']); ?>
-                                            </td>
-                                            <td class="text-center">
-                                                <span class="badge bg-primary rounded-pill">
-                                                    <?php echo $baris['total_transaksi']; ?>
-                                                </span>
-                                            </td>
-                                            <td class="text-end fw-semibold">
-                                                <!-- Format angka menjadi format Rupiah Indonesia -->
-                                                Rp
-                                                <?php echo number_format($baris['total_pendapatan'] ?? 0, 0, ',', '.'); ?>
-                                            </td>
+                                            <th>#</th>
+                                            <th>Nama Agen</th>
+                                            <th class="text-center">Total Transaksi</th>
+                                            <th class="text-end">Total Pendapatan</th>
                                         </tr>
-                                    <?php endwhile; ?>
+                                    </thead>
+                                    <tbody>
+                                        <?php
+                                        // Loop untuk menampilkan setiap baris data kinerja agen
+                                        $no = 1;
+                                        while ($baris = mysqli_fetch_assoc($kinerja_agen)):
+                                            ?>
+                                            <tr>
+                                                <td>
+                                                    <?php echo $no++; ?>
+                                                </td>
+                                                <td>
+                                                    <i class="bi bi-person-circle me-1 text-muted"></i>
+                                                    <?php echo htmlspecialchars($baris['nama_lengkap']); ?>
+                                                </td>
+                                                <td class="text-center">
+                                                    <span class="badge bg-primary rounded-pill">
+                                                        <?php echo $baris['total_transaksi']; ?>
+                                                    </span>
+                                                </td>
+                                                <td class="text-end fw-semibold">
+                                                    <!-- Format angka menjadi format Rupiah Indonesia -->
+                                                    Rp
+                                                    <?php echo number_format($baris['total_pendapatan'] ?? 0, 0, ',', '.'); ?>
+                                                </td>
+                                            </tr>
+                                        <?php endwhile; ?>
 
-                                    <!-- Tampilkan pesan jika belum ada agen -->
-                                    <?php if ($total_agen == 0): ?>
-                                        <tr>
-                                            <td colspan="4" class="text-center text-muted py-3">
-                                                Belum ada agen terdaftar.
-                                            </td>
-                                        </tr>
-                                    <?php endif; ?>
-                                </tbody>
-                            </table>
+                                        <!-- Tampilkan pesan jika belum ada agen -->
+                                        <?php if ($total_agen == 0): ?>
+                                            <tr>
+                                                <td colspan="4" class="text-center text-muted py-3">
+                                                    Belum ada agen terdaftar.
+                                                </td>
+                                            </tr>
+                                        <?php endif; ?>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
+
                     </div>
                 </div>
             </div>

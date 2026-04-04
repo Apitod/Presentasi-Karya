@@ -45,7 +45,7 @@ $total_data = mysqli_fetch_assoc(mysqli_query(
 </head>
 
 <body>
-    <div class="d-flex">
+    <div class="d-flex" id="main-wrapper">
         <?php require_once 'navbar.php'; ?>
 
         <div class="flex-grow-1 p-4">
@@ -87,73 +87,76 @@ $total_data = mysqli_fetch_assoc(mysqli_query(
                     <i class="bi bi-table me-1"></i> Semua Transaksi
                 </div>
                 <div class="card-body p-0">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>#</th>
-                                <th>Nama Pembeli</th>
-                                <th class="text-center">Jumlah</th>
-                                <th>Total Harga</th>
-                                <th>Bukti Transaksi</th>
-                                <th>Tanggal</th>
-                                <th class="text-center">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php
-                            $no = 1;
-                            $badge_class = ['pending' => 'warning text-dark', 'approved' => 'success', 'rejected' => 'danger'];
-                            $badge_label = ['pending' => '⏳ Pending', 'approved' => '✓ Disetujui', 'rejected' => '✗ Ditolak'];
-
-                            // Loop setiap transaksi
-                            while ($trx = mysqli_fetch_assoc($transaksi)):
-                                ?>
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
                                 <tr>
-                                    <td>
-                                        <?php echo $no++; ?>
-                                    </td>
-                                    <td>
-                                        <?php echo htmlspecialchars($trx['nama_pembeli']); ?>
-                                    </td>
-                                    <td class="text-center">
-                                        <?php echo $trx['jumlah']; ?> unit
-                                    </td>
-                                    <td class="fw-semibold">
-                                        Rp
-                                        <?php echo number_format($trx['total_harga'], 0, ',', '.'); ?>
-                                    </td>
-                                    <td>
-                                        <!-- Tampilkan bukti transaksi dalam kode monospace -->
-                                        <code class="text-muted" style="font-size:0.8rem;">
-                                        <?php echo htmlspecialchars($trx['bukti_transaksi']); ?>
-                                    </code>
-                                    </td>
-                                    <td>
-                                        <small class="text-muted">
-                                            <?php echo date('d/m/Y H:i', strtotime($trx['created_at'])); ?>
-                                        </small>
-                                    </td>
-                                    <td class="text-center">
-                                        <span class="badge bg-<?php echo $badge_class[$trx['status']]; ?>">
-                                            <?php echo $badge_label[$trx['status']]; ?>
-                                        </span>
-                                    </td>
+                                    <th>#</th>
+                                    <th>Nama Pembeli</th>
+                                    <th class="text-center">Jumlah</th>
+                                    <th>Total Harga</th>
+                                    <th>Bukti Transaksi</th>
+                                    <th>Tanggal</th>
+                                    <th class="text-center">Status</th>
                                 </tr>
-                            <?php endwhile; ?>
+                            </thead>
+                            <tbody>
+                                <?php
+                                $no = 1;
+                                $badge_class = ['pending' => 'warning text-dark', 'approved' => 'success', 'rejected' => 'danger'];
+                                $badge_label = ['pending' => '⏳ Pending', 'approved' => '✓ Disetujui', 'rejected' => '✗ Ditolak'];
 
-                            <?php if (mysqli_num_rows($transaksi) == 0): ?>
-                                <tr>
-                                    <td colspan="7" class="text-center text-muted py-4">
-                                        <i class="bi bi-receipt" style="font-size:1.5rem;"></i>
-                                        <p class="mt-2 mb-0">
-                                            Belum ada transaksi. <a href="penjualan.php">Buat transaksi pertama!</a>
-                                        </p>
-                                    </td>
-                                </tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
+                                // Loop setiap transaksi
+                                while ($trx = mysqli_fetch_assoc($transaksi)):
+                                    ?>
+                                    <tr>
+                                        <td>
+                                            <?php echo $no++; ?>
+                                        </td>
+                                        <td>
+                                            <?php echo htmlspecialchars($trx['nama_pembeli']); ?>
+                                        </td>
+                                        <td class="text-center">
+                                            <?php echo $trx['jumlah']; ?> unit
+                                        </td>
+                                        <td class="fw-semibold">
+                                            Rp
+                                            <?php echo number_format($trx['total_harga'], 0, ',', '.'); ?>
+                                        </td>
+                                        <td>
+                                            <!-- Tampilkan bukti transaksi dalam kode monospace -->
+                                            <code class="text-muted" style="font-size:0.8rem;">
+                                            <?php echo htmlspecialchars($trx['bukti_transaksi']); ?>
+                                        </code>
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">
+                                                <?php echo date('d/m/Y H:i', strtotime($trx['created_at'])); ?>
+                                            </small>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-<?php echo $badge_class[$trx['status']]; ?>">
+                                                <?php echo $badge_label[$trx['status']]; ?>
+                                            </span>
+                                        </td>
+                                    </tr>
+                                <?php endwhile; ?>
+
+                                <?php if (mysqli_num_rows($transaksi) == 0): ?>
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted py-4">
+                                            <i class="bi bi-receipt" style="font-size:1.5rem;"></i>
+                                            <p class="mt-2 mb-0">
+                                                Belum ada transaksi. <a href="penjualan.php">Buat transaksi pertama!</a>
+                                            </p>
+                                        </td>
+                                    </tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
+
             </div>
         </div>
     </div>

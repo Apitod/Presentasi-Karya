@@ -119,7 +119,7 @@ $request_list = mysqli_query($koneksi, "
 </head>
 
 <body>
-    <div class="d-flex">
+    <div class="d-flex" id="main-wrapper">
         <?php require_once 'navbar.php'; ?>
 
         <div class="flex-grow-1 p-4">
@@ -207,59 +207,62 @@ $request_list = mysqli_query($koneksi, "
                                     <p class="mt-2">Tidak ada request stok yang menunggu.</p>
                                 </div>
                             <?php else: ?>
-                                <table class="table table-hover mb-0">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>Agen</th>
-                                            <th class="text-center">Jumlah</th>
-                                            <th>Catatan</th>
-                                            <th class="text-center">Aksi</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php
-                                        // Loop untuk menampilkan setiap request yang pending
-                                        while ($req = mysqli_fetch_assoc($request_list)):
-                                            ?>
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead class="table-light">
                                             <tr>
-                                                <td>
-                                                    <i class="bi bi-person me-1 text-muted"></i>
-                                                    <?php echo htmlspecialchars($req['nama_agen']); ?>
-                                                    <br>
-                                                    <small class="text-muted">
-                                                        <?php echo date('d/m/Y', strtotime($req['created_at'])); ?>
-                                                    </small>
-                                                </td>
-                                                <td class="text-center">
-                                                    <span class="badge bg-primary fs-6">
-                                                        <?php echo $req['jumlah']; ?>
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    <small class="text-muted">
-                                                        <?php echo $req['catatan'] ? htmlspecialchars($req['catatan']) : '-'; ?>
-                                                    </small>
-                                                </td>
-                                                <td class="text-center">
-                                                    <!-- Tombol Setujui: kirim request_id via GET -->
-                                                    <a href="?approve_request=<?php echo $req['id']; ?>"
-                                                        class="btn btn-success btn-sm"
-                                                        onclick="return confirm('Setujui request ini?')">
-                                                        <i class="bi bi-check-lg"></i>
-                                                    </a>
-                                                    <!-- Tombol Tolak -->
-                                                    <a href="?reject_request=<?php echo $req['id']; ?>"
-                                                        class="btn btn-danger btn-sm"
-                                                        onclick="return confirm('Tolak request ini?')">
-                                                        <i class="bi bi-x-lg"></i>
-                                                    </a>
-                                                </td>
+                                                <th>Agen</th>
+                                                <th class="text-center">Jumlah</th>
+                                                <th>Catatan</th>
+                                                <th class="text-center">Aksi</th>
                                             </tr>
-                                        <?php endwhile; ?>
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody>
+                                            <?php
+                                            // Loop untuk menampilkan setiap request yang pending
+                                            while ($req = mysqli_fetch_assoc($request_list)):
+                                                ?>
+                                                <tr>
+                                                    <td>
+                                                        <i class="bi bi-person me-1 text-muted"></i>
+                                                        <?php echo htmlspecialchars($req['nama_agen']); ?>
+                                                        <br>
+                                                        <small class="text-muted">
+                                                            <?php echo date('d/m/Y', strtotime($req['created_at'])); ?>
+                                                        </small>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <span class="badge bg-primary fs-6">
+                                                            <?php echo $req['jumlah']; ?>
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <small class="text-muted">
+                                                            <?php echo $req['catatan'] ? htmlspecialchars($req['catatan']) : '-'; ?>
+                                                        </small>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <!-- Tombol Setujui: kirim request_id via GET -->
+                                                        <a href="?approve_request=<?php echo $req['id']; ?>"
+                                                            class="btn btn-success btn-sm"
+                                                            onclick="return confirm('Setujui request ini?')">
+                                                            <i class="bi bi-check-lg"></i>
+                                                        </a>
+                                                        <!-- Tombol Tolak -->
+                                                        <a href="?reject_request=<?php echo $req['id']; ?>"
+                                                            class="btn btn-danger btn-sm"
+                                                            onclick="return confirm('Tolak request ini?')">
+                                                            <i class="bi bi-x-lg"></i>
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            <?php endwhile; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
                             <?php endif; ?>
                         </div>
+
                     </div>
                 </div>
             </div>

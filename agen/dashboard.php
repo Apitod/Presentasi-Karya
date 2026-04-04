@@ -84,7 +84,7 @@ $produk = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT * FROM produk LIMIT 
 </head>
 
 <body>
-    <div class="d-flex">
+    <div class="d-flex" id="main-wrapper">
         <?php require_once 'navbar.php'; ?>
 
         <div class="flex-grow-1 p-4">
@@ -162,54 +162,57 @@ $produk = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT * FROM produk LIMIT 
                     <a href="riwayat.php" class="btn btn-sm btn-outline-light">Lihat Semua</a>
                 </div>
                 <div class="card-body p-0">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Pembeli</th>
-                                <th class="text-center">Jumlah</th>
-                                <th>Total</th>
-                                <th>Tanggal</th>
-                                <th class="text-center">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php
-                            // Definisikan warna dan label status di luar loop agar lebih efisien
-                            $badge_class = ['pending' => 'warning text-dark', 'approved' => 'success', 'rejected' => 'danger'];
-                            $badge_label = ['pending' => 'Pending', 'approved' => 'Disetujui', 'rejected' => 'Ditolak'];
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Pembeli</th>
+                                    <th class="text-center">Jumlah</th>
+                                    <th>Total</th>
+                                    <th>Tanggal</th>
+                                    <th class="text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php
+                                // Definisikan warna dan label status di luar loop agar lebih efisien
+                                $badge_class = ['pending' => 'warning text-dark', 'approved' => 'success', 'rejected' => 'danger'];
+                                $badge_label = ['pending' => 'Pending', 'approved' => 'Disetujui', 'rejected' => 'Ditolak'];
 
-                            while ($trx = mysqli_fetch_assoc($transaksi_terbaru)):
-                                ?>
-                                <tr>
-                                    <td>
-                                        <?php echo htmlspecialchars($trx['nama_pembeli']); ?>
-                                    </td>
-                                    <td class="text-center">
-                                        <?php echo $trx['jumlah']; ?> unit
-                                    </td>
-                                    <td>Rp
-                                        <?php echo number_format($trx['total_harga'], 0, ',', '.'); ?>
-                                    </td>
-                                    <td><small class="text-muted">
-                                            <?php echo date('d/m/Y', strtotime($trx['created_at'])); ?>
-                                        </small></td>
-                                    <td class="text-center">
-                                        <span class="badge bg-<?php echo $badge_class[$trx['status']]; ?>">
-                                            <?php echo $badge_label[$trx['status']]; ?>
-                                        </span>
-                                    </td>
-                                </tr>
-                            <?php endwhile; ?>
-                            <?php if ($approved_count == 0 && $pending_count == 0): ?>
-                                <tr>
-                                    <td colspan="5" class="text-center text-muted py-4">
-                                        Belum ada transaksi. <a href="penjualan.php">Buat transaksi pertama &rarr;</a>
-                                    </td>
-                                </tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
+                                while ($trx = mysqli_fetch_assoc($transaksi_terbaru)):
+                                    ?>
+                                    <tr>
+                                        <td>
+                                            <?php echo htmlspecialchars($trx['nama_pembeli']); ?>
+                                        </td>
+                                        <td class="text-center">
+                                            <?php echo $trx['jumlah']; ?> unit
+                                        </td>
+                                        <td>Rp
+                                            <?php echo number_format($trx['total_harga'], 0, ',', '.'); ?>
+                                        </td>
+                                        <td><small class="text-muted">
+                                                <?php echo date('d/m/Y', strtotime($trx['created_at'])); ?>
+                                            </small></td>
+                                        <td class="text-center">
+                                            <span class="badge bg-<?php echo $badge_class[$trx['status']]; ?>">
+                                                <?php echo $badge_label[$trx['status']]; ?>
+                                            </span>
+                                        </td>
+                                    </tr>
+                                <?php endwhile; ?>
+                                <?php if ($approved_count == 0 && $pending_count == 0): ?>
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted py-4">
+                                            Belum ada transaksi. <a href="penjualan.php">Buat transaksi pertama &rarr;</a>
+                                        </td>
+                                    </tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
+
             </div>
         </div>
     </div>

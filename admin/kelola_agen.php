@@ -102,19 +102,19 @@ $daftar_agen = mysqli_query($koneksi, "
 </head>
 
 <body>
-    <div class="d-flex">
+    <div class="d-flex" id="main-wrapper">
         <?php require_once 'navbar.php'; ?>
 
         <div class="flex-grow-1 p-4">
             <!-- Header dengan tombol Tambah Agen -->
-            <div class="d-flex justify-content-between align-items-start mb-4">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
                 <div>
                     <h3 class="page-title mb-1"><i class="bi bi-people me-2" style="color:#4e9af1;"></i> Kelola Agen
                     </h3>
                     <p class="text-muted small mb-0">Kelola data agen dan akun mereka.</p>
                 </div>
                 <!-- Tombol ini membuka modal form tambah agen -->
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambahAgen">
+                <button class="btn btn-primary w-100 w-md-auto" data-bs-toggle="modal" data-bs-target="#modalTambahAgen">
                     <i class="bi bi-person-plus me-1"></i> Tambah Agen Baru
                 </button>
             </div>
@@ -132,71 +132,74 @@ $daftar_agen = mysqli_query($koneksi, "
                     <i class="bi bi-table me-1"></i> Daftar Agen Terdaftar
                 </div>
                 <div class="card-body p-0">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>id</th>
-                                <th>Nama Lengkap</th>
-                                <th>Username</th>
-                                <th>NIK</th>
-                                <th>Alamat</th>
-                                <th class="text-center">Stok Dimiliki</th>
-                                <th class="text-center">Hapus Akun?</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php
-                            $no = 1;
-                            // Loop menampilkan setiap agen dari hasil query
-                            while ($agen = mysqli_fetch_assoc($daftar_agen)):
-                                ?>
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
                                 <tr>
-                                    <td>
-                                        <?php echo $no++; ?>
-                                    </td>
-                                    <td>
-                                        <i class="bi bi-person-circle me-1" style="color:#4e9af1;"></i>
-                                        <strong>
-                                            <?php echo htmlspecialchars($agen['nama_lengkap']); ?>
-                                        </strong>
-                                    </td>
-                                    <td><code><?php echo htmlspecialchars($agen['username']); ?></code></td>
-                                    <td>
-                                        <?php echo htmlspecialchars($agen['nik'] ?: '-'); ?>
-                                    </td>
-                                    <td>
-                                        <small class="text-muted">
-                                            <?php echo htmlspecialchars($agen['alamat'] ?: '-'); ?>
-                                        </small>
-                                    </td>
-                                    <td class="text-center">
-                                        <!-- Tampilkan stok agen dengan warna berbeda berdasarkan jumlah -->
-                                        <span
-                                            class="badge <?php echo $agen['stok_dimiliki'] > 0 ? 'bg-success' : 'bg-secondary'; ?>">
-                                            <?php echo $agen['stok_dimiliki']; ?> unit
-                                        </span>
-                                    </td>
-                                    <td class="text-center">
-                                        <!-- Tombol hapus agen -->
-                                        <a href="?hapus=<?php echo $agen['id']; ?>" class="btn btn-outline-danger btn-sm"
-                                            onclick="return confirm('Hapus agen <?php echo htmlspecialchars($agen['nama_lengkap']); ?>? Semua data terkait juga akan terhapus!')">
-                                            <i class="bi bi-trash"></i>
-                                        </a>
-                                    </td>
+                                    <th>id</th>
+                                    <th>Nama Lengkap</th>
+                                    <th>Username</th>
+                                    <th>NIK</th>
+                                    <th>Alamat</th>
+                                    <th class="text-center">Stok Dimiliki</th>
+                                    <th class="text-center">Hapus Akun?</th>
                                 </tr>
-                            <?php endwhile; ?>
+                            </thead>
+                            <tbody>
+                                <?php
+                                $no = 1;
+                                // Loop menampilkan setiap agen dari hasil query
+                                while ($agen = mysqli_fetch_assoc($daftar_agen)):
+                                    ?>
+                                    <tr>
+                                        <td>
+                                            <?php echo $no++; ?>
+                                        </td>
+                                        <td>
+                                            <i class="bi bi-person-circle me-1" style="color:#4e9af1;"></i>
+                                            <strong>
+                                                <?php echo htmlspecialchars($agen['nama_lengkap']); ?>
+                                            </strong>
+                                        </td>
+                                        <td><code><?php echo htmlspecialchars($agen['username']); ?></code></td>
+                                        <td>
+                                            <?php echo htmlspecialchars($agen['nik'] ?: '-'); ?>
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">
+                                                <?php echo htmlspecialchars($agen['alamat'] ?: '-'); ?>
+                                            </small>
+                                        </td>
+                                        <td class="text-center">
+                                            <!-- Tampilkan stok agen dengan warna berbeda berdasarkan jumlah -->
+                                            <span
+                                                class="badge <?php echo $agen['stok_dimiliki'] > 0 ? 'bg-success' : 'bg-secondary'; ?>">
+                                                <?php echo $agen['stok_dimiliki']; ?> unit
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+                                            <!-- Tombol hapus agen -->
+                                            <a href="?hapus=<?php echo $agen['id']; ?>" class="btn btn-outline-danger btn-sm"
+                                                onclick="return confirm('Hapus agen <?php echo htmlspecialchars($agen['nama_lengkap']); ?>? Semua data terkait juga akan terhapus!')">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                <?php endwhile; ?>
 
-                            <?php if (mysqli_num_rows($daftar_agen) == 0): ?>
-                                <tr>
-                                    <td colspan="7" class="text-center text-muted py-4">
-                                        <i class="bi bi-person-x" style="font-size:1.5rem;"></i>
-                                        <p class="mt-2 mb-0">Belum ada agen yang terdaftar.</p>
-                                    </td>
-                                </tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
+                                <?php if (mysqli_num_rows($daftar_agen) == 0): ?>
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted py-4">
+                                            <i class="bi bi-person-x" style="font-size:1.5rem;"></i>
+                                            <p class="mt-2 mb-0">Belum ada agen yang terdaftar.</p>
+                                        </td>
+                                    </tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
+
             </div>
         </div>
     </div>

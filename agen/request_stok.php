@@ -62,7 +62,7 @@ $riwayat_request = mysqli_query(
 </head>
 
 <body>
-    <div class="d-flex">
+    <div class="d-flex" id="main-wrapper">
         <?php require_once 'navbar.php'; ?>
 
         <div class="flex-grow-1 p-4">
@@ -124,49 +124,52 @@ $riwayat_request = mysqli_query(
                                     <p class="mt-2">Belum ada request yang pernah dibuat.</p>
                                 </div>
                             <?php else: ?>
-                                <table class="table table-hover mb-0">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>Tanggal</th>
-                                            <th class="text-center">Jumlah</th>
-                                            <th>Catatan</th>
-                                            <th class="text-center">Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php while ($req = mysqli_fetch_assoc($riwayat_request)): ?>
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead class="table-light">
                                             <tr>
-                                                <td>
-                                                    <small>
-                                                        <?php echo date('d/m/Y H:i', strtotime($req['created_at'])); ?>
-                                                    </small>
-                                                </td>
-                                                <td class="text-center">
-                                                    <strong>
-                                                        <?php echo $req['jumlah']; ?>
-                                                    </strong> unit
-                                                </td>
-                                                <td>
-                                                    <small class="text-muted">
-                                                        <?php echo $req['catatan'] ? htmlspecialchars($req['catatan']) : '-'; ?>
-                                                    </small>
-                                                </td>
-                                                <td class="text-center">
-                                                    <?php
-                                                    // Tampilkan badge status dengan warna yang sesuai
-                                                    $badge = ['pending' => 'warning text-dark', 'approved' => 'success', 'rejected' => 'danger'];
-                                                    $label = ['pending' => '⏳ Pending', 'approved' => '✓ Disetujui', 'rejected' => '✗ Ditolak'];
-                                                    ?>
-                                                    <span class="badge bg-<?php echo $badge[$req['status']]; ?>">
-                                                        <?php echo $label[$req['status']]; ?>
-                                                    </span>
-                                                </td>
+                                                <th>Tanggal</th>
+                                                <th class="text-center">Jumlah</th>
+                                                <th>Catatan</th>
+                                                <th class="text-center">Status</th>
                                             </tr>
-                                        <?php endwhile; ?>
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody>
+                                            <?php while ($req = mysqli_fetch_assoc($riwayat_request)): ?>
+                                                <tr>
+                                                    <td>
+                                                        <small>
+                                                            <?php echo date('d/m/Y H:i', strtotime($req['created_at'])); ?>
+                                                        </small>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <strong>
+                                                            <?php echo $req['jumlah']; ?>
+                                                        </strong> unit
+                                                    </td>
+                                                    <td>
+                                                        <small class="text-muted">
+                                                            <?php echo $req['catatan'] ? htmlspecialchars($req['catatan']) : '-'; ?>
+                                                        </small>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <?php
+                                                        // Tampilkan badge status dengan warna yang sesuai
+                                                        $badge = ['pending' => 'warning text-dark', 'approved' => 'success', 'rejected' => 'danger'];
+                                                        $label = ['pending' => '⏳ Pending', 'approved' => '✓ Disetujui', 'rejected' => '✗ Ditolak'];
+                                                        ?>
+                                                        <span class="badge bg-<?php echo $badge[$req['status']]; ?>">
+                                                            <?php echo $label[$req['status']]; ?>
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            <?php endwhile; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
                             <?php endif; ?>
                         </div>
+
                     </div>
                 </div>
             </div>

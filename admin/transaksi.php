@@ -96,7 +96,7 @@ $transaksi_list = mysqli_query($koneksi, "
 </head>
 
 <body>
-    <div class="d-flex">
+    <div class="d-flex" id="main-wrapper">
         <?php require_once 'navbar.php'; ?>
 
         <div class="flex-grow-1 p-4">
@@ -138,103 +138,106 @@ $transaksi_list = mysqli_query($koneksi, "
             <!-- Tabel Daftar Transaksi -->
             <div class="card shadow-sm border-0">
                 <div class="card-body p-0">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>#</th>
-                                <th>Agen</th>
-                                <th>Nama Pembeli</th>
-                                <th class="text-center">Jumlah</th>
-                                <th>Total</th>
-                                <th>Bukti Transaksi</th>
-                                <th>Tanggal</th>
-                                <th class="text-center">Status</th>
-                                <th class="text-center">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php
-                            $no = 1;
-                            // Loop menampilkan setiap transaksi
-                            while ($trx = mysqli_fetch_assoc($transaksi_list)):
-                                ?>
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
                                 <tr>
-                                    <td>
-                                        <?php echo $no++; ?>
-                                    </td>
-                                    <td>
-                                        <small><i class="bi bi-person me-1 text-muted"></i></small>
-                                        <?php echo htmlspecialchars($trx['nama_agen']); ?>
-                                    </td>
-                                    <td>
-                                        <?php echo htmlspecialchars($trx['nama_pembeli']); ?>
-                                    </td>
-                                    <td class="text-center">
-                                        <span class="badge bg-secondary">
-                                            <?php echo $trx['jumlah']; ?> unit
-                                        </span>
-                                    </td>
-                                    <td class="fw-semibold">
-                                        Rp
-                                        <?php echo number_format($trx['total_harga'], 0, ',', '.'); ?>
-                                    </td>
-                                    <td>
-                                        <!-- Bukti transaksi ditampilkan dalam format teks -->
-                                        <span class="badge bg-light text-dark border"
-                                            title="<?php echo htmlspecialchars($trx['bukti_transaksi']); ?>">
-                                            <?php echo htmlspecialchars(substr($trx['bukti_transaksi'], 0, 20)); ?>
-                                            <?php echo strlen($trx['bukti_transaksi']) > 20 ? '...' : ''; ?>
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <small class="text-muted">
-                                            <?php echo date('d/m/Y H:i', strtotime($trx['created_at'])); ?>
-                                        </small>
-                                    </td>
-                                    <td class="text-center">
-                                        <!-- Badge status dengan warna berbeda *)
+                                    <th>#</th>
+                                    <th>Agen</th>
+                                    <th>Nama Pembeli</th>
+                                    <th class="text-center">Jumlah</th>
+                                    <th>Total</th>
+                                    <th>Bukti Transaksi</th>
+                                    <th>Tanggal</th>
+                                    <th class="text-center">Status</th>
+                                    <th class="text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
                                 <?php
-                                // Tentukan warna badge berdasarkan status
-                                $badge = ['pending' => 'warning text-dark', 'approved' => 'success', 'rejected' => 'danger'];
-                                $label = ['pending' => 'Pending', 'approved' => 'Disetujui', 'rejected' => 'Ditolak'];
-                                ?>
-                                <span class="badge bg-<?php echo $badge[$trx['status']]; ?>">
-                                    <?php echo $label[$trx['status']]; ?>
-                                </span>
-                            </td>
-                            <td class="text-center">
-                                <?php if ($trx['status'] == 'pending'): ?>
-                                    <!-- Tombol aksi hanya tampil untuk transaksi yang masih pending -->
-                                            <a href="?approve=<?php echo $trx['id']; ?>&filter=<?php echo $filter; ?>"
-                                                class="btn btn-success btn-sm me-1"
-                                                onclick="return confirm('Setujui transaksi ini?')" title="Setujui">
-                                                <i class="bi bi-check-lg"></i>
-                                            </a>
-                                            <a href="?reject=<?php echo $trx['id']; ?>&filter=<?php echo $filter; ?>"
-                                                class="btn btn-danger btn-sm"
-                                                onclick="return confirm('Tolak transaksi ini? Stok akan dikembalikan ke agen.')"
-                                                title="Tolak">
-                                                <i class="bi bi-x-lg"></i>
-                                            </a>
-                                        <?php else: ?>
-                                            <span class="text-muted">-</span>
-                                        <?php endif; ?>
-                                    </td>
-                                </tr>
-                            <?php endwhile; ?>
+                                $no = 1;
+                                // Loop menampilkan setiap transaksi
+                                while ($trx = mysqli_fetch_assoc($transaksi_list)):
+                                    ?>
+                                    <tr>
+                                        <td>
+                                            <?php echo $no++; ?>
+                                        </td>
+                                        <td>
+                                            <small><i class="bi bi-person me-1 text-muted"></i></small>
+                                            <?php echo htmlspecialchars($trx['nama_agen']); ?>
+                                        </td>
+                                        <td>
+                                            <?php echo htmlspecialchars($trx['nama_pembeli']); ?>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-secondary">
+                                                <?php echo $trx['jumlah']; ?> unit
+                                            </span>
+                                        </td>
+                                        <td class="fw-semibold">
+                                            Rp
+                                            <?php echo number_format($trx['total_harga'], 0, ',', '.'); ?>
+                                        </td>
+                                        <td>
+                                            <!-- Bukti transaksi ditampilkan dalam format teks -->
+                                            <span class="badge bg-light text-dark border"
+                                                title="<?php echo htmlspecialchars($trx['bukti_transaksi']); ?>">
+                                                <?php echo htmlspecialchars(substr($trx['bukti_transaksi'], 0, 20)); ?>
+                                                <?php echo strlen($trx['bukti_transaksi']) > 20 ? '...' : ''; ?>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">
+                                                <?php echo date('d/m/Y H:i', strtotime($trx['created_at'])); ?>
+                                            </small>
+                                        </td>
+                                        <td class="text-center">
+                                            <!-- Badge status dengan warna berbeda -->
+                                            <?php
+                                            // Tentukan warna badge berdasarkan status
+                                            $badge = ['pending' => 'warning text-dark', 'approved' => 'success', 'rejected' => 'danger'];
+                                            $label = ['pending' => 'Pending', 'approved' => 'Disetujui', 'rejected' => 'Ditolak'];
+                                            ?>
+                                            <span class="badge bg-<?php echo $badge[$trx['status']]; ?>">
+                                                <?php echo $label[$trx['status']]; ?>
+                                            </span>
+                                        </td>
+                                <td class="text-center">
+                                    <?php if ($trx['status'] == 'pending'): ?>
+                                        <!-- Tombol aksi hanya tampil untuk transaksi yang masih pending -->
+                                                <a href="?approve=<?php echo $trx['id']; ?>&filter=<?php echo $filter; ?>"
+                                                    class="btn btn-success btn-sm me-1"
+                                                    onclick="return confirm('Setujui transaksi ini?')" title="Setujui">
+                                                    <i class="bi bi-check-lg"></i>
+                                                </a>
+                                                <a href="?reject=<?php echo $trx['id']; ?>&filter=<?php echo $filter; ?>"
+                                                    class="btn btn-danger btn-sm"
+                                                    onclick="return confirm('Tolak transaksi ini? Stok akan dikembalikan ke agen.')"
+                                                    title="Tolak">
+                                                    <i class="bi bi-x-lg"></i>
+                                                </a>
+                                            <?php else: ?>
+                                                <span class="text-muted">-</span>
+                                            <?php endif; ?>
+                                        </td>
+                                    </tr>
+                                <?php endwhile; ?>
 
-                            <?php if (mysqli_num_rows($transaksi_list) == 0): ?>
-                                <tr>
-                                    <td colspan="9" class="text-center text-muted py-4">
-                                        <i class="bi bi-receipt" style="font-size:1.5rem;"></i>
-                                        <p class="mt-2 mb-0">Tidak ada transaksi ditemukan.</p>
-                                    </td>
-                                </tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
+                                <?php if (mysqli_num_rows($transaksi_list) == 0): ?>
+                                    <tr>
+                                        <td colspan="9" class="text-center text-muted py-4">
+                                            <i class="bi bi-receipt" style="font-size:1.5rem;"></i>
+                                            <p class="mt-2 mb-0">Tidak ada transaksi ditemukan.</p>
+                                        </td>
+                                    </tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
+
         </div>
     </div>
 
