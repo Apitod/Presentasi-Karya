@@ -48,6 +48,14 @@
             <i class="bi bi-clock-history me-2"></i> Riwayat
         </a>
     </li>
+    <!-- Menu Profil -->
+    <li class="nav-item mb-1">
+        <a href="profil.php"
+            class="nav-link text-white <?php echo basename($_SERVER['PHP_SELF']) == 'profil.php' ? 'active' : ''; ?>"
+            style="<?php echo basename($_SERVER['PHP_SELF']) == 'profil.php' ? 'background: #4fd1c5; color: #1a1a2e !important;' : ''; ?>">
+            <i class="bi bi-person-gear me-2"></i> Profil Saya
+        </a>
+    </li>
 </ul>
 
 <hr style="border-color: rgba(255,255,255,0.1);">

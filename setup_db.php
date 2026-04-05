@@ -93,7 +93,7 @@ CREATE TABLE IF NOT EXISTS transaksi (
     nama_pembeli VARCHAR(100) NOT NULL,      -- Nama pelanggan/pembeli
     jumlah INT NOT NULL,                     -- Jumlah produk yang terjual
     total_harga DECIMAL(10,2) NOT NULL,      -- Total harga penjualan
-    bukti_transaksi TEXT NOT NULL,           -- Bukti transaksi berupa teks (nomor referensi, dll)
+    bukti_transaksi VARCHAR(255) NOT NULL,   -- Nama file gambar bukti transaksi (disimpan di folder uploads/)
     status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending', -- Status persetujuan admin
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Waktu transaksi dibuat
     FOREIGN KEY (agen_id) REFERENCES users(id) ON DELETE CASCADE
@@ -101,7 +101,15 @@ CREATE TABLE IF NOT EXISTS transaksi (
 mysqli_query($conn, $sql_transaksi);
 
 // -----------------------------------------------------------
-// LANGKAH 7: Masukkan data awal (seeding)
+// LANGKAH 7: Migrasi - ubah tipe kolom bukti_transaksi
+// Untuk database yang SUDAH ada, ubah kolom dari TEXT ke VARCHAR(255)
+// (Diperlukan karena bukti sekarang adalah nama file, bukan teks panjang)
+// -----------------------------------------------------------
+mysqli_query($conn, "ALTER TABLE transaksi MODIFY COLUMN bukti_transaksi VARCHAR(255) NOT NULL");
+// Catatan: Query ini aman dijalankan berulang kali (tidak merusak data)
+
+// -----------------------------------------------------------
+// LANGKAH 8: Masukkan data awal (seeding)
 // -----------------------------------------------------------
 
 // Buat akun admin default jika belum ada

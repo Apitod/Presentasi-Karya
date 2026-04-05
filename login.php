@@ -155,7 +155,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <div class="text-center mb-4">
             <i class="bi bi-building-check logo-icon"></i>
             <h2 class="fw-bold mt-2">Sistem Manajemen</h2>
-            <p style="color: rgba(255,255,255,0.5); font-size: 0.9rem;">Karyawan & Penjualan</p>
+            <p style="color: rgba(255,255,255,0.5); font-size: 1rem;">Karyawan & Penjualan</p>
+            <p style="color: rgba(255,255,255,0.5); font-size: 0.9rem;">for mvp only btw</p>
         </div>
 
         <!-- Tampilkan pesan error jika ada -->

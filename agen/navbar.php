@@ -34,23 +34,3 @@
         <?php include 'navbar_content.php'; ?>
     </div>
 </div>
-
-<style>
-    .nav-link {
-        border-radius: 8px;
-        transition: all 0.3s ease;
-    }
-    .nav-link:hover {
-        background: rgba(255, 255, 255, 0.05);
-    }
-    
-    @media (max-width: 991.98px) {
-        #main-wrapper {
-            flex-direction: column;
-        }
-        .flex-grow-1 {
-            width: 100%;
-            padding: 1.5rem !important;
-        }
-    }
-</style>

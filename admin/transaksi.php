@@ -83,16 +83,7 @@ $transaksi_list = mysqli_query($koneksi, "
     <title>Transaksi - Admin</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-    <style>
-        body {
-            background-color: #f0f2f5;
-        }
-
-        .page-title {
-            font-weight: 700;
-            color: #1a1a2e;
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
@@ -180,12 +171,15 @@ $transaksi_list = mysqli_query($koneksi, "
                                             <?php echo number_format($trx['total_harga'], 0, ',', '.'); ?>
                                         </td>
                                         <td>
-                                            <!-- Bukti transaksi ditampilkan dalam format teks -->
-                                            <span class="badge bg-light text-dark border"
-                                                title="<?php echo htmlspecialchars($trx['bukti_transaksi']); ?>">
-                                                <?php echo htmlspecialchars(substr($trx['bukti_transaksi'], 0, 20)); ?>
-                                                <?php echo strlen($trx['bukti_transaksi']) > 20 ? '...' : ''; ?>
-                                            </span>
+                                            <!-- Bukti transaksi ditampilkan sebagai thumbnail gambar -->
+                                            <?php if ($trx['bukti_transaksi']): ?>
+                                                <a href="../uploads/<?php echo htmlspecialchars($trx['bukti_transaksi']); ?>" target="_blank" title="Klik untuk memperbesar">
+                                                    <img src="../uploads/<?php echo htmlspecialchars($trx['bukti_transaksi']); ?>"
+                                                         alt="Bukti" style="width:50px; height:50px; object-fit:cover; border-radius:6px; border:1px solid #ddd;">
+                                                </a>
+                                            <?php else: ?>
+                                                <span class="text-muted small">-</span>
+                                            <?php endif; ?>
                                         </td>
                                         <td>
                                             <small class="text-muted">

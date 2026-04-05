@@ -106,16 +106,7 @@ $request_list = mysqli_query($koneksi, "
     <title>Kelola Stok - Admin</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-    <style>
-        body {
-            background-color: #f0f2f5;
-        }
-
-        .page-title {
-            font-weight: 700;
-            color: #1a1a2e;
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>

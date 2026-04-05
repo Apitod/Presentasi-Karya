@@ -32,16 +32,7 @@ $total_data = mysqli_fetch_assoc(mysqli_query(
     <title>Riwayat Transaksi - Agen</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-    <style>
-        body {
-            background-color: #f0f2f5;
-        }
-
-        .page-title {
-            font-weight: 700;
-            color: #0f3460;
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
@@ -124,10 +115,15 @@ $total_data = mysqli_fetch_assoc(mysqli_query(
                                             <?php echo number_format($trx['total_harga'], 0, ',', '.'); ?>
                                         </td>
                                         <td>
-                                            <!-- Tampilkan bukti transaksi dalam kode monospace -->
-                                            <code class="text-muted" style="font-size:0.8rem;">
-                                            <?php echo htmlspecialchars($trx['bukti_transaksi']); ?>
-                                        </code>
+                                            <!-- Tampilkan thumbnail gambar bukti transaksi -->
+                                            <?php if ($trx['bukti_transaksi']): ?>
+                                                <a href="../uploads/<?php echo htmlspecialchars($trx['bukti_transaksi']); ?>" target="_blank">
+                                                    <img src="../uploads/<?php echo htmlspecialchars($trx['bukti_transaksi']); ?>"
+                                                         alt="Bukti" style="width:45px;height:45px;object-fit:cover;border-radius:6px;border:1px solid #ddd;">
+                                                </a>
+                                            <?php else: ?>
+                                                <span class="text-muted small">-</span>
+                                            <?php endif; ?>
                                         </td>
                                         <td>
                                             <small class="text-muted">

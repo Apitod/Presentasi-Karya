@@ -35,27 +35,3 @@
         <?php include 'navbar_content.php'; ?>
     </div>
 </div>
-
-<style>
-    /* CSS tambahan untuk merapikan tampilan responsive */
-    .nav-link {
-        border-radius: 8px;
-        transition: all 0.3s ease;
-    }
-    .nav-link:hover {
-        background: rgba(255, 255, 255, 0.05);
-    }
-    .active {
-        box-shadow: 0 4px 12px rgba(78, 154, 241, 0.3);
-    }
-    
-    @media (max-width: 991.98px) {
-        #main-wrapper {
-            flex-direction: column;
-        }
-        .flex-grow-1 {
-            width: 100%;
-            padding: 1.5rem !important; /* Kurangi padding di mobile */
-        }
-    }
-</style>

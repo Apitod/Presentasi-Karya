@@ -79,26 +79,7 @@ $daftar_agen = mysqli_query($koneksi, "
     <title>Kelola Agen - Admin</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-    <style>
-        body {
-            background-color: #f0f2f5;
-        }
-
-        .page-title {
-            font-weight: 700;
-            color: #1a1a2e;
-        }
-
-        /* Animasi untuk modal yang muncul */
-        .modal.fade .modal-dialog {
-            transform: translateY(-20px);
-        }
-
-        .modal.show .modal-dialog {
-            transform: translateY(0);
-            transition: transform 0.3s;
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
@@ -114,7 +95,7 @@ $daftar_agen = mysqli_query($koneksi, "
                     <p class="text-muted small mb-0">Kelola data agen dan akun mereka.</p>
                 </div>
                 <!-- Tombol ini membuka modal form tambah agen -->
-                <button class="btn btn-primary w-100 w-md-auto" data-bs-toggle="modal" data-bs-target="#modalTambahAgen">
+                <button class="btn btn-primary w-20 w-md-auto" data-bs-toggle="modal" data-bs-target="#modalTambahAgen">
                     <i class="bi bi-person-plus me-1"></i> Tambah Agen Baru
                 </button>
             </div>
@@ -136,13 +117,13 @@ $daftar_agen = mysqli_query($koneksi, "
                         <table class="table table-hover mb-0">
                             <thead class="table-light">
                                 <tr>
-                                    <th>id</th>
+                                    <th>#</th>
                                     <th>Nama Lengkap</th>
                                     <th>Username</th>
                                     <th>NIK</th>
                                     <th>Alamat</th>
-                                    <th class="text-center">Stok Dimiliki</th>
-                                    <th class="text-center">Hapus Akun?</th>
+                                    <th class="text-center">Stok</th>
+                                    <th class="text-center">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -178,9 +159,13 @@ $daftar_agen = mysqli_query($koneksi, "
                                             </span>
                                         </td>
                                         <td class="text-center">
-                                            <!-- Tombol hapus agen -->
+                                            <!-- Tombol Edit: buka halaman edit_agen.php dengan parameter ID -->
+                                            <a href="edit_agen.php?id=<?php echo $agen['id']; ?>" class="btn btn-outline-primary btn-sm me-1">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <!-- Tombol Hapus -->
                                             <a href="?hapus=<?php echo $agen['id']; ?>" class="btn btn-outline-danger btn-sm"
-                                                onclick="return confirm('Hapus agen <?php echo htmlspecialchars($agen['nama_lengkap']); ?>? Semua data terkait juga akan terhapus!')">
+                                                onclick="return confirm('Hapus agen <?php echo htmlspecialchars($agen['nama_lengkap']); ?>?')">
                                                 <i class="bi bi-trash"></i>
                                             </a>
                                         </td>
