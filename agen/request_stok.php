@@ -13,7 +13,7 @@ $pesan   = '';
 
 // KONFIGURASI TELEGRAM
 $telegram_bot_token = '8295652071:AAHLyBGaWCDD-ilTrKwkDWCasHNXcYIZ_e8';
-$telegram_chat_id   = '8295652071';
+$telegram_chat_id   = '7798797362';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $jumlah  = (int) $_POST['jumlah'];
@@ -32,10 +32,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             // --- PROSES KIRIM NOTIFIKASI TELEGRAM DENGAN CURL ---
             $nama_agen = $_SESSION['nama_lengkap'];
             $teks_pesan = "🔔 *Permintaan Stok Baru!*\n"
-                        . "👤 Agen   : *$nama_agen*\n"
-                        . "📦 Jumlah : *$jumlah unit*\n"
-                        . "📝 Catatan: " . ($catatan ?: '-') . "\n"
-                        . "⏳ Status : _Menunggu Persetujuan_";
+                        . "Agen   : *$nama_agen*\n"
+                        . "Jumlah : *$jumlah unit*\n"
+                        . "Catatan: " . ($catatan ?: '-') . "\n"
+                        . "Status : _Menunggu Persetujuan_";
 
             $url_telegram = "https://api.telegram.org/bot{$telegram_bot_token}/sendMessage";
             $data = [
