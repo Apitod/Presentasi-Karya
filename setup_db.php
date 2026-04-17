@@ -24,21 +24,69 @@ mysqli_select_db($conn, 'presentasi_karya');
 mysqli_set_charset($conn, "utf8");
 
 // -----------------------------------------------------------
-// LANGKAH 2: Buat tabel 'users' (untuk admin dan agen)
+// LANGKAH 2: Buat tabel 'users' (untuk admin, team leader, dan agen)
 // -----------------------------------------------------------
-// Tabel ini menyimpan data akun pengguna sistem
+// Tabel ini menyimpan data akun pengguna sistem.
+// PERUBAHAN v2: Ditambahkan role 'tl' (Team Leader), kolom tl_id (atasan agen),
+// dan kolom poin (reward poin untuk TL).
 $sql_users = "
 CREATE TABLE IF NOT EXISTS users (
-    id INT AUTO_INCREMENT PRIMARY KEY,       -- ID unik setiap user
-    nama_lengkap VARCHAR(100) NOT NULL,      -- Nama lengkap user
-    username VARCHAR(50) NOT NULL UNIQUE,    -- Username untuk login (harus unik)
-    password VARCHAR(255) NOT NULL,          -- Password (akan disimpan sebagai hash MD5)
-    role ENUM('admin', 'agen') NOT NULL,     -- Tipe akun: admin atau agen
-    alamat TEXT,                             -- Alamat (khusus agen)
-    nik VARCHAR(20),                         -- NIK KTP (khusus agen)
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP -- Waktu akun dibuat
+    id           INT AUTO_INCREMENT PRIMARY KEY,
+    nama_lengkap VARCHAR(100) NOT NULL,
+    username     VARCHAR(50)  NOT NULL UNIQUE,
+    password     VARCHAR(255) NOT NULL,
+    role         ENUM('admin', 'tl', 'agen') NOT NULL, -- BARU: tambah role 'tl' untuk Team Leader
+    tl_id        INT NULL,                             -- BARU: ID Team Leader yang menaungi agen (NULL jika tidak ada)
+    poin         INT DEFAULT 0,                        -- BARU: poin reward yang dimiliki oleh TL
+    alamat       TEXT,
+    nik          VARCHAR(20),
+    created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )";
 mysqli_query($conn, $sql_users);
+
+// -----------------------------------------------------------
+// MIGRASI: Perbarui tabel 'users' yang SUDAH ADA di database
+// Jika database sudah pernah dibuat sebelumnya (v1), jalankan
+// ALTER TABLE ini untuk menambahkan kolom/mengubah tipe data.
+// -----------------------------------------------------------
+
+// Langkah A: Ubah kolom 'role' agar mendukung nilai 'tl' (Team Leader)
+// MODIFY COLUMN aman dijalankan berulang kali
+mysqli_query($conn, "ALTER TABLE users MODIFY COLUMN role ENUM('admin', 'tl', 'agen') NOT NULL");
+
+// -----------------------------------------------------------
+// CATATAN TEKNIS: Sintaks "ADD COLUMN IF NOT EXISTS" hanya
+// didukung MariaDB, TIDAK oleh MySQL murni. Solusinya:
+// kita cek dulu lewat INFORMATION_SCHEMA apakah kolom sudah
+// ada, baru jalankan ALTER TABLE jika belum. Cara ini
+// kompatibel dengan semua versi MySQL maupun MariaDB.
+// -----------------------------------------------------------
+
+// Langkah B: Tambahkan kolom 'tl_id' jika belum ada
+// tl_id menyimpan ID Team Leader yang menaungi agen
+$cek_tl_id = mysqli_fetch_assoc(mysqli_query($conn,
+    "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = 'presentasi_karya'
+       AND TABLE_NAME   = 'users'
+       AND COLUMN_NAME  = 'tl_id'"
+));
+if (!$cek_tl_id) {
+    // Kolom belum ada, tambahkan sekarang
+    mysqli_query($conn, "ALTER TABLE users ADD COLUMN tl_id INT NULL AFTER role");
+}
+
+// Langkah C: Tambahkan kolom 'poin' jika belum ada
+// poin adalah akumulasi reward yang diterima TL
+$cek_poin = mysqli_fetch_assoc(mysqli_query($conn,
+    "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = 'presentasi_karya'
+       AND TABLE_NAME   = 'users'
+       AND COLUMN_NAME  = 'poin'"
+));
+if (!$cek_poin) {
+    // Kolom belum ada, tambahkan sekarang
+    mysqli_query($conn, "ALTER TABLE users ADD COLUMN poin INT DEFAULT 0 AFTER tl_id");
+}
 
 // -----------------------------------------------------------
 // LANGKAH 3: Buat tabel 'produk' (hanya 1 produk utama)

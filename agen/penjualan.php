@@ -1,8 +1,7 @@
 <?php
 // ============================================================
 // FILE: agen/penjualan.php
-// FUNGSI: Agen melakukan transaksi penjualan produk ke pembeli
-// Bukti transaksi berupa UPLOAD GAMBAR (bukan teks)
+// FUNGSI: Record New Sale - Scholarly curator style overhaul
 // ============================================================
 
 require_once 'cek_sesi.php';
@@ -11,70 +10,47 @@ require_once '../koneksi.php';
 $agen_id = $_SESSION['user_id'];
 $pesan = '';
 
-// -----------------------------------------------------------
-// PROSES: Simpan transaksi penjualan baru
-// -----------------------------------------------------------
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_sale'])) {
     $nama_pembeli = trim($_POST['nama_pembeli']);
     $jumlah       = (int) $_POST['jumlah'];
 
-    // Validasi field teks
     if (empty($nama_pembeli) || $jumlah <= 0) {
-        $pesan = ['type' => 'danger', 'text' => 'Semua field wajib diisi!'];
+        $pesan = ['type' => 'danger', 'text' => 'All fields are strictly required.'];
     } elseif (!isset($_FILES['bukti_transaksi']) || $_FILES['bukti_transaksi']['error'] !== UPLOAD_ERR_OK) {
-        // Validasi: file gambar wajib diunggah
-        $pesan = ['type' => 'danger', 'text' => 'Gambar bukti transaksi wajib diunggah!'];
+        $pesan = ['type' => 'danger', 'text' => 'Proof of transaction image is mandatory.'];
     } else {
-        // ---------------------------------------------------
-        // Proses Upload Gambar
-        // ---------------------------------------------------
         $file       = $_FILES['bukti_transaksi'];
-        $ekstensi_ok = ['jpg', 'jpeg', 'png', 'gif']; // Tipe file yang diizinkan
+        $ekstensi_ok = ['jpg', 'jpeg', 'png'];
         $ekstensi   = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-        $ukuran_max = 2 * 1024 * 1024; // Maksimal 2 MB
-
+        
         if (!in_array($ekstensi, $ekstensi_ok)) {
-            $pesan = ['type' => 'danger', 'text' => 'Format file harus JPG, PNG, atau GIF!'];
-        } elseif ($file['size'] > $ukuran_max) {
-            $pesan = ['type' => 'danger', 'text' => 'Ukuran file maksimal 2 MB!'];
+            $pesan = ['type' => 'danger', 'text' => 'Format must be JPG or PNG.'];
         } else {
-            // Buat nama file unik agar tidak bentrok
             $nama_file = 'bukti_' . $agen_id . '_' . time() . '.' . $ekstensi;
             $tujuan    = '../uploads/' . $nama_file;
 
-            if (!move_uploaded_file($file['tmp_name'], $tujuan)) {
-                $pesan = ['type' => 'danger', 'text' => 'Gagal mengunggah file!'];
-            } else {
-                // Upload berhasil, lanjut proses transaksi
-                $stok_data = mysqli_fetch_assoc(mysqli_query(
-                    $koneksi,
-                    "SELECT stok FROM stok_agen WHERE agen_id = $agen_id"
-                ));
-                $stok_tersedia = $stok_data ? $stok_data['stok'] : 0;
+            if (move_uploaded_file($file['tmp_name'], $tujuan)) {
+                $stok_data = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT stok FROM stok_agen WHERE agen_id = $agen_id"));
+                $stok_tersedia = $stok_data['stok'] ?? 0;
 
                 if ($stok_tersedia < $jumlah) {
-                    $pesan = ['type' => 'danger', 'text' => "Stok tidak cukup! Stok Anda: $stok_tersedia unit."];
-                    // Hapus file yang sudah terupload karena transaksi gagal
+                    $pesan = ['type' => 'danger', 'text' => "Insufficient stock ($stok_tersedia available)."];
                     unlink($tujuan);
                 } else {
                     $produk = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT harga FROM produk WHERE id = 1"));
                     $total  = $produk['harga'] * $jumlah;
                     $nama_pembeli_aman = mysqli_real_escape_string($koneksi, $nama_pembeli);
 
-                    // Kurangi stok agen
                     mysqli_query($koneksi, "UPDATE stok_agen SET stok = stok - $jumlah WHERE agen_id = $agen_id");
-
-                    // Simpan transaksi dengan nama file gambar sebagai bukti
-                    $query = "INSERT INTO transaksi (agen_id, nama_pembeli, jumlah, total_harga, bukti_transaksi, status)
+                    $query = "INSERT INTO transaksi (agen_id, nama_pembeli, jumlah, total_harga, bukti_transaksi, status) 
                               VALUES ($agen_id, '$nama_pembeli_aman', $jumlah, $total, '$nama_file', 'pending')";
 
                     if (mysqli_query($koneksi, $query)) {
-                        $pesan = ['type' => 'success', 'text' => "Transaksi berhasil dicatat! Total: Rp " . number_format($total, 0, ',', '.') . ". Menunggu persetujuan admin."];
+                        $pesan = ['type' => 'success', 'text' => 'Sale recorded successfully. Awaiting administrative audit.'];
                     } else {
-                        // Gagal simpan: kembalikan stok dan hapus file
                         mysqli_query($koneksi, "UPDATE stok_agen SET stok = stok + $jumlah WHERE agen_id = $agen_id");
                         unlink($tujuan);
-                        $pesan = ['type' => 'danger', 'text' => 'Gagal mencatat transaksi!'];
+                        $pesan = ['type' => 'danger', 'text' => 'System error recording sale.'];
                     }
                 }
             }
@@ -82,199 +58,208 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 
-// Ambil data terkini setelah proses
 $stok_data = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT stok FROM stok_agen WHERE agen_id = $agen_id"));
 $stok_saya = $stok_data ? $stok_data['stok'] : 0;
 $produk    = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT * FROM produk LIMIT 1"));
+
+$recent_sales = mysqli_query($koneksi, "SELECT * FROM transaksi WHERE agen_id = $agen_id ORDER BY created_at DESC LIMIT 3");
 ?>
 <!DOCTYPE html>
-<html lang="id">
-
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Penjualan - Agen</title>
+    <title>Record Sale | Scholarly Curator</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <style>
+        .calc-box {
+            background: #f8f9fc;
+            border-radius: 16px;
+            padding: 30px;
+            text-align: right;
+            border: 2px dashed var(--border-color);
+        }
+        .grand-total {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            letter-spacing: -1px;
+        }
+        .file-upload-wrapper {
+            border: 2px dashed var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            background: #f8f9fc;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .file-upload-wrapper:hover {
+            border-color: var(--primary);
+            background: var(--primary-soft);
+        }
+    </style>
 </head>
-
 <body>
     <div class="d-flex" id="main-wrapper">
-        <?php require_once 'navbar.php'; ?>
+        <?php include 'navbar.php'; ?>
 
-        <div class="flex-grow-1 p-4">
-            <h3 class="page-title mb-1">
-                <i class="bi bi-cart-plus me-2" style="color:#4fd1c5;"></i> Buat Transaksi Penjualan
-            </h3>
-            <p class="text-muted small mb-4">Input data penjualan produk kepada pembeli.</p>
-
-            <?php if ($pesan): ?>
-                <div class="alert alert-<?php echo $pesan['type']; ?> alert-dismissible fade show" role="alert">
-                    <?php echo $pesan['text']; ?>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <div class="flex-grow-1">
+            <header class="top-nav justify-content-between">
+                <div class="search-bar">
+                    <i class="bi bi-search"></i>
+                    <input type="text" placeholder="Search catalog, sales, or agents...">
                 </div>
-            <?php endif; ?>
-
-            <div class="row g-4">
-                <!-- Form Transaksi Penjualan -->
-                <div class="col-md-7">
-                    <div class="card shadow-sm border-0">
-                        <div class="card-header fw-semibold" style="background: #0f3460; color:#fff;">
-                            <i class="bi bi-pencil-square me-1"></i> Form Penjualan
+                <div class="d-flex align-items-center gap-3">
+                    <button class="btn btn-link text-muted p-1"><i class="bi bi-bell fs-5"></i></button>
+                    <div class="d-flex align-items-center gap-2 border-start ps-3 ms-2">
+                        <div class="text-end">
+                            <div class="fw-bold small lh-1">Dr. <?php echo explode(' ', $_SESSION['nama_lengkap'])[0]; ?></div>
+                            <div class="text-muted" style="font-size: 0.7rem;">Senior Sales Agent</div>
                         </div>
-                        <div class="card-body">
-                            <?php if ($stok_saya <= 0): ?>
-                                <div class="alert alert-warning">
-                                    <i class="bi bi-exclamation-triangle me-2"></i>
-                                    Stok Anda habis! Silakan
-                                    <a href="request_stok.php" class="alert-link">request stok</a> terlebih dahulu.
-                                </div>
-                            <?php else: ?>
-                                <!-- enctype multipart/form-data WAJIB untuk upload file -->
-                                <form method="POST" action="" enctype="multipart/form-data">
-                                    <!-- Field Nama Pembeli -->
-                                    <div class="mb-3">
-                                        <label for="nama_pembeli" class="form-label small fw-semibold">
-                                            Nama Pembeli <span class="text-danger">*</span>
-                                        </label>
-                                        <input type="text" class="form-control" id="nama_pembeli" name="nama_pembeli"
-                                            required placeholder="Nama lengkap pembeli">
-                                    </div>
+                        <img src="https://ui-avatars.com/api/?name=<?php echo urlencode($_SESSION['nama_lengkap']); ?>&background=0061f2&color=fff" class="rounded-circle" width="36" height="36">
+                    </div>
+                </div>
+            </header>
 
-                                    <!-- Field Jumlah Produk -->
-                                    <div class="mb-3">
-                                        <label for="jumlah" class="form-label small fw-semibold">
-                                            Jumlah Produk <span class="text-danger">*</span>
-                                        </label>
-                                        <input type="number" class="form-control" id="jumlah" name="jumlah"
-                                            min="1" max="<?php echo $stok_saya; ?>" required placeholder="Contoh: 2">
-                                        <div class="form-text">
-                                            Maksimal: <strong><?php echo $stok_saya; ?> unit</strong>
+            <main class="p-4 p-lg-5">
+                <div class="mb-5">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-2" style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
+                            <li class="breadcrumb-item"><a href="#" class="text-decoration-none text-primary">TRANSACTION ENTRY</a></li>
+                        </ol>
+                    </nav>
+                    <h1 class="page-title">Record New Sale</h1>
+                </div>
+
+                <?php if ($pesan): ?>
+                    <div class="alert alert-<?php echo $pesan['type']; ?> alert-modern mb-4">
+                        <i class="bi bi-info-circle-fill me-2"></i> <?php echo $pesan['text']; ?>
+                    </div>
+                <?php endif; ?>
+
+                <div class="row g-4">
+                    <div class="col-lg-8">
+                        <div class="card p-4">
+                            <div class="d-flex gap-2 mb-4">
+                                <span class="badge bg-light text-muted border px-3 py-2"><i class="bi bi-box-seam me-1"></i> Current Stock: <?php echo $stok_saya; ?> Units</span>
+                                <span class="badge bg-light text-muted border px-3 py-2"><i class="bi bi-tag me-1"></i> Unit Price: Rp <?php echo number_format($produk['harga']); ?></span>
+                            </div>
+
+                            <form action="" method="POST" enctype="multipart/form-data">
+                                <div class="row g-4">
+                                    <div class="col-12">
+                                        <label class="form-label">Buyer Information</label>
+                                        <div class="position-relative">
+                                            <i class="bi bi-person position-absolute start-0 top-50 translate-middle-y ps-3 text-muted"></i>
+                                            <input type="text" name="nama_pembeli" class="form-control ps-5" placeholder="Enter Full Legal Name or Entity" required>
                                         </div>
                                     </div>
-
-                                    <!-- Preview Total Harga (real-time via JS) -->
-                                    <div id="preview-total" class="mb-3">
-                                        <p class="text-muted small mb-1">Estimasi Total Harga</p>
-                                        <h4 class="fw-bold mb-0" style="color:#0f3460;" id="total-text">Rp 0</h4>
-                                    </div>
-
-                                    <!-- Field Bukti Transaksi: Upload Gambar -->
-                                    <div class="mb-4">
-                                        <label for="bukti_transaksi" class="form-label small fw-semibold">
-                                            Bukti Transaksi (Gambar) <span class="text-danger">*</span>
-                                        </label>
-                                        <!-- accept: batasi hanya file gambar -->
-                                        <input type="file" class="form-control" id="bukti_transaksi"
-                                            name="bukti_transaksi" accept="image/*" required>
-                                        <div class="form-text">
-                                            Upload foto bukti pembayaran. Format: JPG/PNG, maks 2 MB.
+                                    <div class="col-md-6">
+                                        <label class="form-label">Order Quantity</label>
+                                        <div class="position-relative">
+                                            <i class="bi bi-cart position-absolute start-0 top-50 translate-middle-y ps-3 text-muted"></i>
+                                            <input type="number" name="jumlah" id="input_jumlah" class="form-control ps-5" placeholder="0" min="1" max="<?php echo $stok_saya; ?>" required>
                                         </div>
-                                        <!-- Preview gambar sebelum dikirim -->
-                                        <img id="preview-gambar" src="" alt="Preview Bukti">
+                                        <?php if($stok_saya < 5): ?>
+                                        <div class="mt-2 text-danger small fw-bold">
+                                            <i class="bi bi-exclamation-triangle-fill"></i> Low Stock Warning: Only <?php echo $stok_saya; ?> units remaining.
+                                        </div>
+                                        <?php endif; ?>
                                     </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Upload Proof</label>
+                                        <input type="file" name="bukti_transaksi" class="form-control" accept="image/*" required>
+                                        <div class="form-text">JPG/PNG Proof of payment required.</div>
+                                    </div>
+                                    <div class="col-12 mt-5">
+                                        <button type="submit" name="submit_sale" class="btn btn-primary-modern w-100 py-3 rounded-3 d-flex align-items-center justify-content-center gap-2">
+                                            <i class="bi bi-send-fill"></i> Submit Sale
+                                        </button>
+                                        <p class="text-center text-muted small mt-3">By submitting, you confirm that all transaction data is accurate per academic audit guidelines.</p>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
 
-                                    <button type="submit" class="btn btn-primary w-100"
-                                        style="background: #0f3460; border: none;">
-                                        <i class="bi bi-send me-1"></i> Kirim Transaksi
-                                    </button>
-                                </form>
-                            <?php endif; ?>
+                    <div class="col-lg-4">
+                        <div class="calc-box mb-4">
+                            <div class="text-muted small fw-bold text-uppercase mb-2">Total Calculation</div>
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="text-muted">Units</span>
+                                <span class="fw-bold" id="calc_units">0</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-3 border-bottom pb-2">
+                                <span class="text-muted">Rate</span>
+                                <span class="fw-bold" id="calc_rate">Rp <?php echo number_format($produk['harga']); ?></span>
+                            </div>
+                            <div class="text-muted small fw-bold text-uppercase mb-1">Grand Total</div>
+                            <div class="grand-total" id="calc_total">Rp 0</div>
+                        </div>
+
+                        <div class="card border-0 shadow-sm">
+                             <div class="card-body p-4">
+                                <div class="d-flex align-items-center gap-2 text-success mb-3">
+                                    <i class="bi bi-check-circle-fill fs-5"></i>
+                                    <h6 class="fw-bold mb-0">Transaction Policy</h6>
+                                </div>
+                                <p class="text-muted small">All new sales are subject to a 24-hour verification period. Transactions exceeding Rp 5,000,000 require administrative approval.</p>
+                                <a href="#" class="text-primary text-decoration-none small fw-bold">Read Policy <i class="bi bi-chevron-right small"></i></a>
+                             </div>
+                        </div>
+                        
+                        <div class="card bg-dark mt-4 overflow-hidden">
+                             <img src="https://images.unsplash.com/photo-1554224155-1696413565d3?q=80&w=2000&auto=format&fit=crop" class="card-img opacity-50" style="height: 154px; object-fit: cover;">
+                             <div class="card-img-overlay d-flex flex-column justify-content-end p-3">
+                                <div class="badge bg-white text-dark p-1 rounded-pill w-auto d-inline-block small" style="font-size: 0.6rem; width: fit-content !important;">JOURNAL ARCHIVE</div>
+                                <h6 class="text-white fw-bold mb-0 mt-2">Sales log #2024-QX</h6>
+                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Info Produk & Stok -->
-                <div class="col-md-5">
-                    <div class="card shadow-sm border-0 mb-3">
-                        <div class="card-body text-center py-4">
-                            <i class="bi bi-box-seam" style="font-size: 2.5rem; color: #4fd1c5;"></i>
-                            <h5 class="mt-2 fw-bold"><?php echo htmlspecialchars($produk['nama_produk']); ?></h5>
-                            <p class="text-muted small">Produk yang dijual</p>
-                            <div class="row text-center mt-3">
-                                <div class="col-6 border-end">
-                                    <p class="text-muted small mb-1">Stok Saya</p>
-                                    <h4 class="fw-bold" style="color: <?php echo $stok_saya > 5 ? '#28a745' : '#dc3545'; ?>">
-                                        <?php echo $stok_saya; ?>
-                                    </h4>
-                                    <small class="text-muted">unit</small>
-                                </div>
-                                <div class="col-6">
-                                    <p class="text-muted small mb-1">Harga Satuan</p>
-                                    <h4 class="fw-bold" style="color:#0f3460;">
-                                        <?php echo number_format($produk['harga'], 0, ',', '.'); ?>
-                                    </h4>
-                                    <small class="text-muted">Rp/unit</small>
-                                </div>
-                            </div>
-                        </div>
+                <div class="mt-5">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4 class="fw-800">Recent Sales Activity</h4>
+                        <a href="riwayat.php" class="text-primary text-decoration-none small fw-bold">View All History</a>
                     </div>
-
-                    <!-- Alur transaksi -->
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-body">
-                            <h6 class="fw-bold mb-3">Alur Transaksi</h6>
-                            <div class="d-flex mb-2">
-                                <span class="badge bg-primary me-2 mt-1">1</span>
-                                <small>Agen mengisi form dan upload bukti pembayaran</small>
-                            </div>
-                            <div class="d-flex mb-2">
-                                <span class="badge bg-warning text-dark me-2 mt-1">2</span>
-                                <small>Transaksi menunggu approval dari Admin</small>
-                            </div>
-                            <div class="d-flex">
-                                <span class="badge bg-success me-2 mt-1">3</span>
-                                <small>Admin menyetujui → transaksi selesai</small>
+                    <div class="row g-3">
+                        <?php while($row = mysqli_fetch_assoc($recent_sales)): ?>
+                        <div class="col-md-4">
+                            <div class="card bg-white border shadow-none p-3">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="bg-primary-soft text-primary p-2 rounded-circle">
+                                        <i class="bi bi-person-fill"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="fw-bold small"><?php echo $row['nama_pembeli']; ?></div>
+                                        <div class="text-muted" style="font-size: 0.7rem;"><?php echo $row['jumlah']; ?> Units • Rp <?php echo number_format($row['total_harga']); ?></div>
+                                    </div>
+                                    <span class="badge <?php echo $row['status'] == 'approved' ? 'bg-success-subtle text-success' : 'bg-warning-subtle text-warning'; ?> p-1" style="font-size: 0.6rem;"><?php echo strtoupper($row['status']); ?></span>
+                                </div>
                             </div>
                         </div>
+                        <?php endwhile; ?>
                     </div>
                 </div>
-            </div>
+            </main>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Preview total harga real-time
-        const inputJumlah = document.getElementById('jumlah');
-        const previewDiv  = document.getElementById('preview-total');
-        const totalText   = document.getElementById('total-text');
-        const hargaSatuan = <?php echo $produk['harga']; ?>;
+        const input = document.getElementById('input_jumlah');
+        const calcUnits = document.getElementById('calc_units');
+        const calcTotal = document.getElementById('calc_total');
+        const rate = <?php echo $produk['harga']; ?>;
 
-        if (inputJumlah) {
-            inputJumlah.addEventListener('input', function () {
-                const jumlah = parseInt(this.value) || 0;
-                if (jumlah > 0) {
-                    totalText.textContent = 'Rp ' + (jumlah * hargaSatuan).toLocaleString('id-ID');
-                    previewDiv.style.display = 'block';
-                } else {
-                    previewDiv.style.display = 'none';
-                }
-            });
-        }
-
-        // Preview gambar sebelum dikirim
-        // FileReader membaca file lokal dan menampilkannya tanpa upload
-        const inputBukti   = document.getElementById('bukti_transaksi');
-        const previewGambar = document.getElementById('preview-gambar');
-
-        if (inputBukti) {
-            inputBukti.addEventListener('change', function () {
-                const file = this.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function (e) {
-                        previewGambar.src     = e.target.result;
-                        previewGambar.style.display = 'block';
-                    };
-                    reader.readAsDataURL(file); // Baca file sebagai URL data
-                } else {
-                    previewGambar.style.display = 'none';
-                }
-            });
-        }
+        input.addEventListener('input', (e) => {
+            const val = parseInt(e.target.value) || 0;
+            calcUnits.innerText = val;
+            calcTotal.innerText = 'Rp ' + (val * rate).toLocaleString('id-ID');
+        });
     </script>
 </body>
-
 </html>

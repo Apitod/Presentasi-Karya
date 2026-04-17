@@ -1,12 +1,18 @@
 # Sistem Manajemen Karyawan dan Penjualan
 
-> **Mini-Project PHP Native & MySQL** | Dibuat untuk keperluan presentasi akademik
+> **Mini-Project PHP Native & MySQL** | Versi 2.0 — Multi-Level Management
 
 ---
 
 ## 📋 Deskripsi Proyek
 
-Sistem Manajemen Karyawan dan Penjualan adalah aplikasi web sederhana berbasis **PHP Native** (prosedural) dan **MySQL**. Sistem ini dirancang untuk mensimulasikan alur kerja antara **Admin** dan **Agen** dalam sebuah perusahaan yang menjual 1 jenis produk.
+Sistem Manajemen Karyawan dan Penjualan adalah aplikasi web sederhana berbasis **PHP Native** (prosedural) dan **MySQL**. Sistem ini dirancang untuk mensimulasikan alur kerja antara **Admin**, **Team Leader (TL)**, dan **Agen** dalam sebuah perusahaan yang menjual 1 jenis produk.
+
+**Versi 2.0** menambahkan fitur:
+- 🏅 **Multi-level Role**: Admin → Team Leader (TL) → Agen
+- ⭐ **Sistem Reward Poin** untuk TL berdasarkan kinerja agennya
+- 📬 **Notifikasi Telegram** otomatis saat agen request stok
+- 🎨 **UI Overhaul** ke clean corporate portal (Bootstrap 5)
 
 ---
 
@@ -15,28 +21,48 @@ Sistem Manajemen Karyawan dan Penjualan adalah aplikasi web sederhana berbasis *
 ```
 PresentasiKarya/
 │
-├── index.php           ← Entry point: redirect otomatis ke login/dashboard
-├── login.php           ← Halaman login untuk semua pengguna
-├── logout.php          ← Menghapus sesi dan kembali ke login
-├── koneksi.php         ← Konfigurasi dan koneksi database MySQL
-├── setup_db.php        ← Script otomatis buat database & tabel (jalankan 1x)
+├── index.php             ← Entry point: redirect otomatis ke login/dashboard
+├── login.php             ← Halaman login untuk semua pengguna
+├── logout.php            ← Menghapus sesi dan kembali ke login
+├── koneksi.php           ← Konfigurasi dan koneksi database MySQL
+├── setup_db.php          ← Script otomatis buat database & tabel (jalankan 1x)
 │
-├── admin/              ← Folder khusus halaman Admin
-│   ├── cek_sesi.php    ← Guard: cek apakah yang akses adalah admin
-│   ├── navbar.php      ← Komponen sidebar navigasi admin
-│   ├── dashboard.php   ← Dashboard statistik kinerja
-│   ├── kelola_stok.php ← Tambah stok & approve request stok agen
-│   ├── kelola_agen.php ← Tambah & lihat daftar agen
-│   └── transaksi.php   ← Lihat & approve/reject transaksi penjualan
+├── admin/                ← Folder panel Admin & Team Leader
+│   ├── cek_sesi.php      ← Guard: izinkan role 'admin' DAN 'tl'
+│   ├── navbar.php        ← Sidebar navigasi (desktop + mobile offcanvas)
+│   ├── navbar_content.php← Isi menu sidebar (ada logika tampil menu untuk role)
+│   ├── dashboard.php     ← Dashboard statistik + chart + leaderboard poin TL
+│   ├── kelola_stok.php   ← Tambah stok & approve request stok agen
+│   ├── kelola_agen.php   ← Tambah & lihat daftar agen (dengan pilihan TL)
+│   ├── kelola_tl.php     ← [BARU] Tambah & lihat daftar Team Leader
+│   ├── edit_agen.php     ← Edit data agen
+│   ├── transaksi.php     ← Lihat & approve/reject transaksi + logika poin TL
+│   └── style.css         ← Clean corporate CSS (Inter font, stat-card, dll)
 │
-└── agen/               ← Folder khusus halaman Agen
-    ├── cek_sesi.php    ← Guard: cek apakah yang akses adalah agen
-    ├── navbar.php      ← Komponen sidebar navigasi agen
-    ├── dashboard.php   ← Dashboard ringkasan stok & penjualan
-    ├── request_stok.php← Ajukan permintaan stok ke admin
-    ├── penjualan.php   ← Input transaksi penjualan baru
-    └── riwayat.php     ← Lihat riwayat semua transaksi
+└── agen/                 ← Folder panel Agen
+    ├── cek_sesi.php      ← Guard: hanya role 'agen' yang boleh akses
+    ├── navbar.php        ← Sidebar navigasi agen
+    ├── dashboard.php     ← Dashboard: stok, pendapatan, info TL atasan
+    ├── request_stok.php  ← [DIPERBARUI] Ajukan stok + kirim notifikasi Telegram
+    ├── penjualan.php     ← Input transaksi penjualan baru
+    └── riwayat.php       ← Lihat riwayat semua transaksi
 ```
+
+---
+
+## 🏢 Hierarki Role
+
+```
+Admin
+  └── Team Leader (TL)
+        └── Agen
+```
+
+| Role | Area Akses | Keterangan |
+|------|-----------|------------|
+| **Admin** | Panel Admin (penuh) | Bisa tambah/hapus semua data, approve transaksi |
+| **Team Leader (TL)** | Panel Admin (terbatas) | Hanya lihat. Tidak bisa approve/hapus |
+| **Agen** | Panel Agen | Input penjualan, request stok |
 
 ---
 
@@ -49,22 +75,46 @@ PresentasiKarya/
 
 ---
 
-### Tabel 1: `users` — Data pengguna (admin & agen)
+### Tabel 1: `users` — Data pengguna (admin, TL & agen)
+
+**DIPERBARUI di Versi 2.0:**
 
 ```sql
 CREATE TABLE users (
     id           INT AUTO_INCREMENT PRIMARY KEY,
     nama_lengkap VARCHAR(100) NOT NULL,
     username     VARCHAR(50)  NOT NULL UNIQUE,
-    password     VARCHAR(255) NOT NULL,          -- Disimpan dalam hash MD5
-    role         ENUM('admin', 'agen') NOT NULL, -- Tipe akun
-    alamat       TEXT,                           -- Khusus agen
-    nik          VARCHAR(20),                    -- NIK KTP, khusus agen
+    password     VARCHAR(255) NOT NULL,             -- Hash MD5
+    role         ENUM('admin', 'tl', 'agen') NOT NULL, -- BARU: tambah role 'tl'
+    tl_id        INT NULL,                          -- BARU: ID Team Leader atasan agen
+    poin         INT DEFAULT 0,                     -- BARU: akumulasi poin reward TL
+    alamat       TEXT,
+    nik          VARCHAR(20),
     created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
-**Penjelasan:** Tabel ini menyimpan seluruh akun pengguna. Kolom `role` membedakan antara admin dan agen. Kolom `username` bersifat `UNIQUE` sehingga tidak boleh ada dua akun dengan username yang sama.
+**Penjelasan perubahan kolom:**
+
+| Kolom | Keterangan |
+|-------|-----------|
+| `role` | Diubah dari `ENUM('admin','agen')` menjadi `ENUM('admin','tl','agen')` untuk mendukung Team Leader |
+| `tl_id` | Menyimpan ID User yang menjadi atasan (TL) dari agen. Nilai `NULL` berarti agen tidak punya TL |
+| `poin` | Akumulasi poin reward TL. Bertambah +10 setiap kali transaksi agen di bawahnya disetujui admin |
+
+**Query migrasi (untuk database lama v1):**
+```sql
+-- Ubah kolom role agar mendukung nilai 'tl'
+ALTER TABLE users MODIFY COLUMN role ENUM('admin', 'tl', 'agen') NOT NULL;
+
+-- Tambah kolom tl_id (relasi atasan agen)
+ALTER TABLE users ADD COLUMN tl_id INT NULL AFTER role;
+
+-- Tambah kolom poin reward untuk TL
+ALTER TABLE users ADD COLUMN poin INT DEFAULT 0 AFTER tl_id;
+```
+
+> ✅ Query migrasi ini sudah otomatis dijalankan di dalam `setup_db.php`.
 
 ---
 
@@ -74,16 +124,14 @@ CREATE TABLE users (
 CREATE TABLE produk (
     id           INT AUTO_INCREMENT PRIMARY KEY,
     nama_produk  VARCHAR(100) NOT NULL,
-    stok         INT DEFAULT 0,            -- Stok global di tangan admin
-    harga        DECIMAL(10,2) DEFAULT 0   -- Harga satuan
+    stok         INT DEFAULT 0,
+    harga        DECIMAL(10,2) DEFAULT 0
 );
 ```
 
-**Penjelasan:** Karena perusahaan hanya punya 1 jenis produk, tabel ini hanya berisi 1 baris data. Stok di sini adalah stok "induk" yang dikelola admin sebelum didistribusikan ke agen.
-
 ---
 
-### Tabel 3: `stok_agen` — Stok yang dimiliki setiap agen
+### Tabel 3: `stok_agen` — Stok agen
 
 ```sql
 CREATE TABLE stok_agen (
@@ -94,11 +142,9 @@ CREATE TABLE stok_agen (
 );
 ```
 
-**Penjelasan:** Setiap agen memiliki stok sendiri. Stok ini berkurang saat agen melakukan penjualan dan bertambah saat admin menyetujui request stok. `ON DELETE CASCADE` berarti jika agen dihapus, data stoknya ikut terhapus otomatis.
-
 ---
 
-### Tabel 4: `request_stok` — Permintaan stok dari agen ke admin
+### Tabel 4: `request_stok` — Permintaan stok agen ke admin
 
 ```sql
 CREATE TABLE request_stok (
@@ -112,8 +158,6 @@ CREATE TABLE request_stok (
 );
 ```
 
-**Penjelasan:** Agen mengajukan permintaan tambahan stok melalui tabel ini. Admin akan mengubah status dari `pending` menjadi `approved` atau `rejected`. Saat disetujui, stok admin dikurangi dan stok agen ditambah.
-
 ---
 
 ### Tabel 5: `transaksi` — Penjualan produk oleh agen
@@ -125,25 +169,22 @@ CREATE TABLE transaksi (
     nama_pembeli     VARCHAR(100) NOT NULL,
     jumlah           INT NOT NULL,
     total_harga      DECIMAL(10,2) NOT NULL,
-    bukti_transaksi  TEXT NOT NULL,  -- Berupa teks: nomor referensi, kode transfer, dll
+    bukti_transaksi  VARCHAR(255) NOT NULL,
     status           ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
     created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (agen_id) REFERENCES users(id) ON DELETE CASCADE
 );
 ```
 
-**Penjelasan:** Setiap transaksi penjualan yang dilakukan agen disimpan di sini. Status awal selalu `pending`. Stok agen langsung dikurangi saat transaksi dibuat. Jika admin menolak, stok dikembalikan ke agen.
-
 ---
 
-### Relasi Antar Tabel (ERD Sederhana)
+### Relasi Antar Tabel
 
 ```
-users (id) ─────┬──── stok_agen (agen_id)
-                ├──── request_stok (agen_id)
-                └──── transaksi (agen_id)
-
-produk (id) ──── (diakses langsung, tidak ada relasi foreign key eksplisit)
+users (id) ─────┬──── stok_agen   (agen_id → users.id)
+                ├──── request_stok (agen_id → users.id)
+                ├──── transaksi    (agen_id → users.id)
+                └──── users        (tl_id   → users.id)  ← relasi self-join (agen → TL)
 ```
 
 ---
@@ -153,6 +194,7 @@ produk (id) ──── (diakses langsung, tidak ada relasi foreign key eksplis
 ### Prasyarat
 - XAMPP / Laragon / WAMP terinstal (PHP 7.4+ & MySQL)
 - Browser modern (Chrome, Firefox, Edge)
+- Koneksi internet (untuk CDN Bootstrap & Chart.js)
 
 ### Langkah-langkah
 
@@ -162,8 +204,8 @@ produk (id) ──── (diakses langsung, tidak ada relasi foreign key eksplis
 
 2. **Sesuaikan kredensial database** di file `koneksi.php`:
    ```php
-   define('DB_USER', 'root');  // Ganti jika berbeda
-   define('DB_PASS', '');      // Isi password MySQL jika ada
+   define('DB_USER', 'root');  // Sesuaikan username MySQL kamu
+   define('DB_PASS', '');      // Isi password jika ada
    ```
 
 3. **Buat database secara otomatis** dengan membuka browser:
@@ -171,7 +213,7 @@ produk (id) ──── (diakses langsung, tidak ada relasi foreign key eksplis
    http://localhost/PresentasiKarya/setup_db.php
    ```
 
-4. **Akses aplikasi** melalui:
+4. **Akses aplikasi:**
    ```
    http://localhost/PresentasiKarya/
    ```
@@ -184,7 +226,26 @@ produk (id) ──── (diakses langsung, tidak ada relasi foreign key eksplis
 |-------|----------|----------|
 | Admin | `admin`  | `admin123` |
 
-> Agen dapat ditambahkan melalui panel Admin → menu **Kelola Agen**.
+> Team Leader dan Agen ditambahkan melalui panel Admin.
+
+---
+
+## 📬 Konfigurasi Notifikasi Telegram
+
+File: `agen/request_stok.php`
+
+1. Buka file tersebut, cari bagian:
+   ```php
+   $telegram_bot_token = 'ISI_TOKEN_BOT_KAMU_DI_SINI';
+   $telegram_chat_id   = 'ISI_CHAT_ID_ADMIN_DI_SINI';
+   ```
+
+2. Ganti dengan token bot dan chat ID kamu. Cara mendapatkannya:
+   - **Bot Token**: Buka Telegram → cari `@BotFather` → `/newbot`
+   - **Chat ID**: Kirim pesan ke bot, lalu buka URL:
+     `https://api.telegram.org/bot<TOKEN>/getUpdates`
+
+3. Pastikan `allow_url_fopen = On` di `php.ini` (untuk `file_get_contents`).
 
 ---
 
@@ -194,30 +255,50 @@ produk (id) ──── (diakses langsung, tidak ada relasi foreign key eksplis
 
 ```
 Login → Dashboard
-   ├── Kelola Stok
-   │     ├── Tambah stok produk utama (langsung update tabel produk)
-   │     └── Approve/Reject request stok agen
-   │           ├── Approve → stok produk berkurang, stok agen bertambah
-   │           └── Reject  → status diubah, stok tidak berubah
+   ├── Kelola TL [BARU]
+   │     ├── Tambah TL baru (nama, username, password)
+   │     ├── Lihat daftar TL + jumlah agen + total poin
+   │     └── Hapus TL (agen di bawahnya dibebaskan)
    │
    ├── Kelola Agen
-   │     ├── Tambah agen baru (input: nama, NIK, alamat, username, password)
-   │     └── Hapus agen (data terkait ikut terhapus via CASCADE)
+   │     ├── Tambah agen + pilih TL atasan [BARU]
+   │     └── Hapus agen
+   │
+   ├── Kelola Stok
+   │     ├── Tambah stok produk utama
+   │     └── Approve/Reject request stok agen
    │
    └── Transaksi
-         ├── Approve → status transaksi = approved
+         ├── Approve → status = approved
+         │     └── [BARU] Cek tl_id agen → jika ada TL: poin TL += 10
          └── Reject  → status = rejected, stok dikembalikan ke agen
 ```
+
+### Alur Team Leader (TL) [BARU]
+
+```
+Login → Panel Admin (mode read-only)
+   ├── Dashboard: melihat kinerja agennya sendiri
+   ├── Kelola Agen: melihat daftar agen di bawahnya
+   ├── Transaksi: melihat transaksi agen di bawahnya
+   └── Sidebar: menampilkan total poin reward real-time
+```
+
+> **Sistem Reward Poin TL:**
+> - Setiap 1 transaksi agen disetujui Admin = **+10 poin** untuk TL
+> - Poin diakumulasi di kolom `poin` tabel `users`
+> - Leaderboard poin TL ditampilkan di dashboard Admin
 
 ### Alur Agen
 
 ```
-Login → Dashboard (lihat stok & statistik penjualan)
+Login → Dashboard (lihat stok, pendapatan, nama TL atasan)
    ├── Request Stok
-   │     └── Agen ajukan jumlah → status pending → admin approve
+   │     ├── Agen isi jumlah & catatan → status pending
+   │     └── [BARU] Notifikasi Telegram otomatis ke Admin
    │
    ├── Penjualan
-   │     ├── Agen isi: nama pembeli, jumlah, bukti transaksi (teks)
+   │     ├── Agen isi: nama pembeli, jumlah, upload bukti foto
    │     ├── Stok agen langsung berkurang
    │     └── Status transaksi = pending sampai admin approve
    │
@@ -227,14 +308,15 @@ Login → Dashboard (lihat stok & statistik penjualan)
 
 ---
 
-## 🛡️ Fitur Keamanan (Sederhana)
+## 🛡️ Fitur Keamanan
 
 | Fitur | Implementasi |
 |-------|-------------|
-| **Password Hashing** | MD5 satu arah (cukup untuk belajar) |
-| **Session Guard** | `cek_sesi.php` di setiap folder memastikan hanya role yang tepat yang bisa akses |
-| **SQL Injection Prevention** | `mysqli_real_escape_string()` untuk semua input yang dimasukkan ke query |
-| **XSS Prevention** | `htmlspecialchars()` untuk semua output data ke HTML |
+| **Password Hashing** | MD5 satu arah |
+| **Session Guard** | `cek_sesi.php` di setiap folder, cek role secara ketat |
+| **SQL Injection Prevention** | `mysqli_real_escape_string()` untuk semua input |
+| **XSS Prevention** | `htmlspecialchars()` untuk semua output ke HTML |
+| **Role-based Access** | Admin full-access; TL read-only; Agen portal sendiri |
 
 ---
 
@@ -242,27 +324,33 @@ Login → Dashboard (lihat stok & statistik penjualan)
 
 | Teknologi | Keterangan |
 |-----------|-----------|
-| **PHP Native** | Versi 7.4+ dengan pendekatan prosedural (mysqli) |
+| **PHP Native** | Versi 7.4+ prosedural (mysqli) |
 | **MySQL** | Database relasional |
-| **Bootstrap 5** | Framework CSS via CDN untuk UI responsif |
+| **Bootstrap 5.3** | Framework CSS via CDN |
 | **Bootstrap Icons** | Library ikon via CDN |
-| **JavaScript (Vanilla)** | Preview total harga real-time di halaman penjualan agen |
+| **Chart.js 4.4** | Grafik bar performa agen |
+| **Telegram Bot API** | Notifikasi via `file_get_contents()` |
+| **Google Font: Inter** | Tipografi modern korporat |
 
 ---
 
 ## 📚 Konsep PHP yang Dipelajari
 
-1. **`session_start()` & `$_SESSION`** — Menyimpan data login pengguna antar halaman
-2. **`mysqli_connect()`** — Menghubungkan PHP ke database MySQL
-3. **`mysqli_query()`** — Menjalankan query SQL dari PHP
-4. **`mysqli_fetch_assoc()`** — Mengambil baris hasil query sebagai array asosiatif
-5. **`mysqli_num_rows()`** — Menghitung jumlah baris hasil query
-6. **`$_POST` & `$_GET`** — Menerima data dari form (POST) dan URL (GET)
-7. **`header("Location: ...")`** — Redirect pengguna ke halaman lain
-8. **`md5()`** — Hash password sebelum disimpan ke database
-9. **`mysqli_real_escape_string()`** — Mencegah SQL Injection
-10. **`htmlspecialchars()`** — Mencegah serangan XSS saat menampilkan data
+1. **`session_start()` & `$_SESSION`** — Menyimpan data login antar halaman
+2. **`mysqli_connect()`** — Menghubungkan PHP ke MySQL
+3. **`mysqli_query()`** — Menjalankan query SQL
+4. **`mysqli_fetch_assoc()`** — Mengambil baris hasil query
+5. **`$_POST` & `$_GET`** — Menerima data dari form dan URL
+6. **`header("Location: ...")`** — Redirect ke halaman lain
+7. **`md5()`** — Hash password
+8. **`mysqli_real_escape_string()`** — Mencegah SQL Injection
+9. **`htmlspecialchars()`** — Mencegah XSS
+10. **`file_get_contents()`** — Memanggil URL eksternal (Telegram API)
+11. **`urlencode()`** — Encode teks agar aman dikirim via URL
+12. **`json_encode()`** — Konversi array PHP ke format JSON untuk Chart.js
+13. **SQL JOIN** — Menggabungkan data dari beberapa tabel sekaligus
+14. **SQL LEFT JOIN** — Menampilkan data meski relasi tidak ada (nullable)
 
 ---
 
-*Dibuat sebagai mini-project mata kuliah Pemrograman Web*
+*Dibuat sebagai mini-project mata kuliah Pemrograman Web — Versi 2.0*

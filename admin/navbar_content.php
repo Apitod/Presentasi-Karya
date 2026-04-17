@@ -1,59 +1,81 @@
-<!-- Logo / Nama Aplikasi (Hanya di Desktop) -->
-<a href="dashboard.php" class="d-none d-lg-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
-    <i class="bi bi-building-check me-2" style="font-size: 1.5rem; color: #4e9af1;"></i>
-    <span class="fs-6 fw-bold">Panel Admin</span>
-</a>
+<!-- ============================================================
+     FILE: admin/navbar_content.php
+     FUNGSI: Menu sidebar Modern - Scholarly Curator Style
+     ============================================================ -->
 
-<!-- Nama admin yang sedang login -->
-<div class="mb-3 ps-1">
-    <small class="text-white-50 d-block">Selamat datang,</small>
-    <div class="fw-bold text-white">
-        <i class="bi bi-person-circle me-1"></i>
-        <?php echo htmlspecialchars($_SESSION['nama_lengkap']); ?>
+<!-- Logo / Brand Section -->
+<div class="px-3 mb-4 mt-3">
+    <div class="d-flex align-items-center gap-2">
+        <div class="brand-box bg-primary text-white d-flex align-items-center justify-content-center rounded-3" style="width: 40px; height: 40px;">
+            <i class="bi bi-book-half fs-5"></i>
+        </div>
+        <div>
+            <div class="fw-bold text-dark lh-1" style="font-size: 1rem;">Editorial</div>
+            <div class="fw-bold text-dark lh-1" style="font-size: 1rem;">Management</div>
+            <div class="text-muted fw-bold" style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px;">Admin Portal</div>
+        </div>
     </div>
 </div>
 
-<hr style="border-color: rgba(255,255,255,0.1);">
+<hr class="mx-3 opacity-10">
 
-<!-- Menu navigasi -->
-<ul class="nav nav-pills flex-column mb-auto">
-    <li class="nav-item mb-1">
-        <a href="dashboard.php"
-            class="nav-link text-white <?php echo basename($_SERVER['PHP_SELF']) == 'dashboard.php' ? 'active' : ''; ?>"
-            style="<?php echo basename($_SERVER['PHP_SELF']) == 'dashboard.php' ? 'background: #4e9af1;' : ''; ?>">
-            <i class="bi bi-speedometer2 me-2"></i> Dashboard
+<!-- Menu Navigasi Utama -->
+<ul class="nav flex-column mb-auto">
+
+    <li class="nav-item">
+        <a href="dashboard.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'dashboard.php' ? 'active' : ''; ?>">
+            <i class="bi bi-grid-fill"></i> DASHBOARD
         </a>
     </li>
-    <li class="nav-item mb-1">
-        <a href="kelola_stok.php"
-            class="nav-link text-white <?php echo basename($_SERVER['PHP_SELF']) == 'kelola_stok.php' ? 'active' : ''; ?>"
-            style="<?php echo basename($_SERVER['PHP_SELF']) == 'kelola_stok.php' ? 'background: #4e9af1;' : ''; ?>">
-            <i class="bi bi-boxes me-2"></i> Kelola Stok
+
+    <li class="nav-item">
+        <a href="kelola_tl.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'kelola_tl.php' ? 'active' : ''; ?>">
+            <i class="bi bi-person-badge-fill"></i> TEAM LEADERS
         </a>
     </li>
-    <li class="nav-item mb-1">
-        <a href="kelola_agen.php"
-            class="nav-link text-white <?php echo basename($_SERVER['PHP_SELF']) == 'kelola_agen.php' ? 'active' : ''; ?>"
-            style="<?php echo basename($_SERVER['PHP_SELF']) == 'kelola_agen.php' ? 'background: #4e9af1;' : ''; ?>">
-            <i class="bi bi-people me-2"></i> Kelola Agen
+
+    <li class="nav-item">
+        <a href="kelola_agen.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'kelola_agen.php' ? 'active' : ''; ?>">
+            <i class="bi bi-people-fill"></i> SALES TEAM
         </a>
     </li>
-    <li class="nav-item mb-1">
-        <a href="transaksi.php"
-            class="nav-link text-white <?php echo basename($_SERVER['PHP_SELF']) == 'transaksi.php' ? 'active' : ''; ?>"
-            style="<?php echo basename($_SERVER['PHP_SELF']) == 'transaksi.php' ? 'background: #4e9af1;' : ''; ?>">
-            <i class="bi bi-receipt-cutoff me-2"></i> Transaksi
+
+    <li class="nav-item">
+        <a href="kelola_stok.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'kelola_stok.php' ? 'active' : ''; ?>">
+            <i class="bi bi-box-seam-fill"></i> INVENTORY
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a href="transaksi.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'transaksi.php' ? 'active' : ''; ?>">
+            <i class="bi bi-receipt-cutoff"></i> TRANSACTIONS
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a href="riwayat.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'riwayat.php' ? 'active' : ''; ?>">
+            <i class="bi bi-bar-chart-fill"></i> REPORTS
+        </a>
+    </li>
+
+</ul>
+
+<hr class="mx-3 opacity-10 mt-4">
+
+<ul class="nav flex-column">
+    <li class="nav-item">
+        <a href="#" class="nav-link">
+            <i class="bi bi-question-circle-fill"></i> HELP CENTER
+        </a>
+    </li>
+    <li class="nav-item">
+        <a href="#" class="nav-link">
+            <i class="bi bi-person-fill-gear"></i> ACCOUNT SETTINGS
+        </a>
+    </li>
+    <li class="nav-item mt-2 px-3">
+        <a href="../logout.php" class="btn btn-light btn-sm w-100 text-danger fw-bold rounded-3 border py-2" onclick="return confirm('Exit session?')">
+            <i class="bi bi-box-arrow-left me-2"></i> LOGOUT
         </a>
     </li>
 </ul>
-
-<hr style="border-color: rgba(255,255,255,0.1);">
-
-<!-- Tombol Keluar / Logout -->
-<div class="mt-auto">
-    <a href="../logout.php" class="btn btn-sm w-100 text-start"
-        style="background: rgba(255,59,59,0.2); color: #ff6b6b; border: 1px solid rgba(255,59,59,0.3);"
-        onclick="return confirm('Yakin ingin keluar?')">
-        <i class="bi bi-box-arrow-left me-1"></i> Keluar Aplikasi
-    </a>
-</div>

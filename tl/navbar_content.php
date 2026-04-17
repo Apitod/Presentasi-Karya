@@ -1,17 +1,17 @@
 <!-- ============================================================
-     FILE: agen/navbar_content.php
-     FUNGSI: Menu sidebar Modern untuk Agen
+     FILE: tl/navbar_content.php
+     FUNGSI: Menu sidebar Modern untuk Team Leader
      ============================================================ -->
 
 <div class="px-3 mb-4 mt-3">
     <div class="d-flex align-items-center gap-2">
         <div class="brand-box bg-primary text-white d-flex align-items-center justify-content-center rounded-3" style="width: 40px; height: 40px;">
-            <i class="bi bi-cart-fill fs-5"></i>
+            <i class="bi bi-person-video2 fs-5"></i>
         </div>
         <div>
             <div class="fw-bold text-dark lh-1" style="font-size: 1rem;">Editorial</div>
             <div class="fw-bold text-dark lh-1" style="font-size: 1rem;">Management</div>
-            <div class="text-muted fw-bold" style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px;">Agent Portal</div>
+            <div class="text-muted fw-bold" style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px;">TL Portal</div>
         </div>
     </div>
 </div>
@@ -25,18 +25,13 @@
         </a>
     </li>
     <li class="nav-item">
-        <a href="penjualan.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'penjualan.php' ? 'active' : ''; ?>">
-            <i class="bi bi-plus-circle-fill"></i> NEW SALE
-        </a>
-    </li>
-    <li class="nav-item">
-        <a href="request_stok.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'request_stok.php' ? 'active' : ''; ?>">
-            <i class="bi bi-box-arrow-in-down"></i> STOCK REQUESTS
+        <a href="kelola_agen.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'kelola_agen.php' ? 'active' : ''; ?>">
+            <i class="bi bi-people-fill"></i> SALES TEAM
         </a>
     </li>
     <li class="nav-item">
         <a href="riwayat.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'riwayat.php' ? 'active' : ''; ?>">
-            <i class="bi bi-clock-history"></i> MY HISTORY
+            <i class="bi bi-bar-chart-fill"></i> REPORTS
         </a>
     </li>
 </ul>
