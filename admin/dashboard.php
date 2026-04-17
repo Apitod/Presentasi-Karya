@@ -1,270 +1,268 @@
 <?php
 // ============================================================
 // FILE: admin/dashboard.php
-// FUNGSI: Dashboard Utama Admin - Modern Scholarly Overhaul
+// FUNGSI: Dasbor Utama Admin - Ditambah Grafik & Top Agen/TL
 // ============================================================
 
 require_once 'cek_sesi.php';
 require_once '../koneksi.php';
 
-// Stats Logic
-$produk = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT * FROM produk LIMIT 1"));
+// Ambil Statistik
+$stok_global = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT SUM(stok) as total FROM produk"))['total'] ?? 0;
 $total_agen = mysqli_num_rows(mysqli_query($koneksi, "SELECT id FROM users WHERE role = 'agen'"));
-$transaksi_approved = mysqli_num_rows(mysqli_query($koneksi, "SELECT id FROM transaksi WHERE status = 'approved'"));
-$request_pending = mysqli_num_rows(mysqli_query($koneksi, "SELECT id FROM request_stok WHERE status = 'pending'"));
+$transaksi_pending = mysqli_num_rows(mysqli_query($koneksi, "SELECT id FROM transaksi WHERE status = 'pending'"));
+$request_stok_pending = mysqli_num_rows(mysqli_query($koneksi, "SELECT id FROM request_stok WHERE status = 'pending'"));
 
-// Chart Data (Top Agents)
-$query_kinerja = "
+// Data Kinerja Agen (Top 5 berdasarkan total pendapatan disetujui)
+$top_agents = mysqli_query($koneksi, "
     SELECT u.nama_lengkap, SUM(t.total_harga) AS total_pendapatan
     FROM users u
     JOIN transaksi t ON u.id = t.agen_id AND t.status = 'approved'
     WHERE u.role = 'agen'
     GROUP BY u.id
     ORDER BY total_pendapatan DESC
-    LIMIT 4
-";
-$top_agents = mysqli_query($koneksi, $query_kinerja);
-
-// Recent Activity (Mixed)
-$activities = mysqli_query($koneksi, "
-    (SELECT 'transaksi' as type, u.nama_lengkap, t.created_at, t.total_harga as info, t.status FROM transaksi t JOIN users u ON t.agen_id = u.id)
-    UNION
-    (SELECT 'stok' as type, u.nama_lengkap, r.created_at, r.jumlah as info, r.status FROM request_stok r JOIN users u ON r.agen_id = u.id)
-    ORDER BY created_at DESC LIMIT 5
+    LIMIT 5
 ");
+
+// Data Kinerja Team Leader (Top 5 berdasarkan poin)
+$top_tls = mysqli_query($koneksi, "
+    SELECT nama_lengkap, poin 
+    FROM users 
+    WHERE role = 'tl' 
+    ORDER BY poin DESC 
+    LIMIT 5
+");
+
+// Data Grafik Penjualan (7 Hari Terakhir)
+$grafik_penjualan = mysqli_query($koneksi, "
+    SELECT DATE(created_at) as tanggal, SUM(total_harga) as total_harian
+    FROM transaksi 
+    WHERE status = 'approved' AND created_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+    GROUP BY DATE(created_at)
+    ORDER BY tanggal ASC
+");
+
+$label_tanggal = [];
+$data_penjualan = [];
+
+// Siapkan array 7 hari terakhir agar grafik tidak kosong jika tak ada transaksi
+for ($i = 6; $i >= 0; $i--) {
+    $tgl = date('Y-m-d', strtotime("-$i days"));
+    $label_tanggal[$tgl] = date('d M', strtotime($tgl));
+    $data_penjualan[$tgl] = 0;
+}
+
+while ($row = mysqli_fetch_assoc($grafik_penjualan)) {
+    $tgl = $row['tanggal'];
+    if (isset($data_penjualan[$tgl])) {
+        $data_penjualan[$tgl] = (int) $row['total_harian'];
+    }
+}
+
+$labels_js = json_encode(array_values($label_tanggal));
+$data_js = json_encode(array_values($data_penjualan));
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard | Scholarly Curator</title>
+    <title>Dasbor Admin | Manajemen Karyawan</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <style>
-        .activity-item {
-            position: relative;
-            padding-left: 32px;
-            padding-bottom: 24px;
-            border-left: 2px solid var(--border-color);
-        }
-        .activity-item:last-child {
-            padding-bottom: 0;
-            border-left-color: transparent;
-        }
-        .activity-icon {
-            position: absolute;
-            left: -11px;
-            top: 0;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: #fff;
-            border: 2px solid var(--primary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.6rem;
-            color: var(--primary);
-            z-index: 1;
-        }
-        .progress {
-            height: 8px;
-            border-radius: 10px;
-        }
-    </style>
+    <!-- Include Chart.js untuk Grafik -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="d-flex" id="main-wrapper">
         <?php include 'navbar.php'; ?>
 
-        <div class="flex-grow-1">
-            <!-- Topbar -->
-            <header class="top-nav justify-content-between">
-                <div class="search-bar">
-                    <i class="bi bi-search"></i>
-                    <input type="text" placeholder="Search data points, agents, or stock...">
-                </div>
-                <div class="d-flex align-items-center gap-3">
-                    <button class="btn btn-link text-muted position-relative p-1">
-                        <i class="bi bi-bell fs-5"></i>
-                        <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle"></span>
-                    </button>
-                    <button class="btn btn-link text-muted p-1">
-                        <i class="bi bi-gear fs-5"></i>
-                    </button>
-                    <div class="d-flex align-items-center gap-2 border-start ps-3 ms-2">
-                        <div class="text-end d-none d-md-block">
-                            <div class="fw-bold small lh-1"><?php echo $_SESSION['nama_lengkap']; ?></div>
-                            <div class="text-muted" style="font-size: 0.7rem;">Head Administrator</div>
-                        </div>
-                        <img src="https://ui-avatars.com/api/?name=<?php echo urlencode($_SESSION['nama_lengkap']); ?>&background=0061f2&color=fff" class="rounded-circle" width="36" height="36">
-                    </div>
-                </div>
-            </header>
+        <div class="flex-grow-1 p-4">
+            <div class="mb-4">
+                <h2 class="fw-bold mb-1">Selamat Datang, <?php echo explode(' ', $_SESSION['nama_lengkap'])[0]; ?></h2>
+                <p class="text-muted small">Berikut adalah ringkasan operasional sistem beserta analitik penjualan.</p>
+            </div>
 
-            <main class="p-4 p-lg-5">
-                <div class="d-flex justify-content-between align-items-start mb-5">
-                    <div>
-                        <h1 class="page-title">Dashboard Overview</h1>
-                        <p class="text-subtitle mb-0">Aggregated insights across the scholarly ecosystem.</p>
-                    </div>
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-light bg-white border shadow-sm">Export Report</button>
-                        <button class="btn btn-primary d-flex align-items-center gap-2">
-                             Refresh Data
-                        </button>
+            <!-- Kartu Statistik -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm p-3 h-100">
+                        <div class="text-muted small fw-bold text-uppercase mb-2">Stok Tersedia</div>
+                        <h3 class="fw-bold mb-0 text-primary"><?php echo number_format($stok_global); ?> <small class="fs-6 text-muted">Unit</small></h3>
                     </div>
                 </div>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm p-3 h-100">
+                        <div class="text-muted small fw-bold text-uppercase mb-2">Total Agen</div>
+                        <h3 class="fw-bold mb-0 text-dark"><?php echo $total_agen; ?> <small class="fs-6 text-muted">Orang</small></h3>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm p-3 h-100">
+                        <div class="text-muted small fw-bold text-uppercase mb-2">Trx Menunggu</div>
+                        <h3 class="fw-bold mb-0 text-warning"><?php echo $transaksi_pending; ?> <small class="fs-6 text-muted">Data</small></h3>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm p-3 h-100">
+                        <div class="text-muted small fw-bold text-uppercase mb-2">Req Stok Baru</div>
+                        <h3 class="fw-bold mb-0 text-danger"><?php echo $request_stok_pending; ?> <small class="fs-6 text-muted">Req</small></h3>
+                    </div>
+                </div>
+            </div>
 
-                <!-- Stats Grid -->
-                <div class="row g-4 mb-5">
-                    <div class="col-md-3">
-                        <div class="card stat-card">
-                            <div class="d-flex justify-content-between mb-3">
-                                <div class="stat-icon bg-primary-subtle text-primary">
-                                    <i class="bi bi-box"></i>
-                                </div>
-                                <span class="badge bg-success-subtle text-success">+12.5%</span>
-                            </div>
-                            <div class="text-muted small fw-bold text-uppercase ls-wide" style="font-size: 0.65rem;">Total Products</div>
-                            <h2 class="fw-800 mb-0"><?php echo number_format($produk['stok'] ?? 0); ?></h2>
+            <!-- Grafik Penjualan -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="fw-bold mb-0"><i class="bi bi-graph-up text-primary me-2"></i>Grafik Penjualan Harian</h5>
+                            <span class="badge bg-light text-muted border">7 Hari Terakhir</span>
                         </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card stat-card">
-                            <div class="d-flex justify-content-between mb-3">
-                                <div class="stat-icon bg-info-subtle text-info">
-                                    <i class="bi bi-people"></i>
-                                </div>
-                                <span class="badge bg-success-subtle text-success">+4 new</span>
-                            </div>
-                            <div class="text-muted small fw-bold text-uppercase ls-wide" style="font-size: 0.65rem;">Total Agents</div>
-                            <h2 class="fw-800 mb-0"><?php echo $total_agen; ?></h2>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card stat-card">
-                            <div class="d-flex justify-content-between mb-3">
-                                <div class="stat-icon bg-success-subtle text-success">
-                                    <i class="bi bi-check-circle"></i>
-                                </div>
-                                <span class="text-muted small">Last 30 days</span>
-                            </div>
-                            <div class="text-muted small fw-bold text-uppercase ls-wide" style="font-size: 0.65rem;">Approved Sales</div>
-                            <h2 class="fw-800 mb-0"><?php echo number_format($transaksi_approved); ?></h2>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card stat-card bg-primary text-white shadow-primary">
-                            <div class="d-flex justify-content-between mb-3 text-white">
-                                <div class="stat-icon bg-white bg-opacity-20">
-                                    <i class="bi bi-clock-history"></i>
-                                </div>
-                                <i class="bi bi-arrow-right fs-5"></i>
-                            </div>
-                            <div class="text-white text-opacity-75 small fw-bold text-uppercase ls-wide" style="font-size: 0.65rem;">Pending Requests</div>
-                            <h2 class="fw-800 mb-0"><?php echo $request_pending; ?></h2>
+                        <div style="position: relative; height: 300px; width: 100%;">
+                            <canvas id="salesChart"></canvas>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <div class="row g-4 mb-5">
-                    <!-- Top Performing Agents -->
-                    <div class="col-lg-8">
-                        <div class="card h-100">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <span>Top Performing Agents</span>
-                                <a href="kelola_agen.php" class="text-primary text-decoration-none small fw-bold">View All</a>
-                            </div>
-                            <div class="card-body p-4">
-                                <?php while($agent = mysqli_fetch_assoc($top_agents)): ?>
-                                <div class="mb-4">
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <div class="d-flex align-items-center gap-3">
-                                            <img src="https://ui-avatars.com/api/?name=<?php echo urlencode($agent['nama_lengkap']); ?>&background=f8f9fc&color=0061f2" class="rounded-pill" width="32" height="32">
-                                            <span class="fw-600 small"><?php echo $agent['nama_lengkap']; ?></span>
-                                        </div>
-                                        <span class="fw-bold small text-dark">Rp <?php echo number_format($agent['total_pendapatan'], 0, ',', '.'); ?></span>
-                                    </div>
-                                    <div class="progress">
-                                        <div class="progress-bar bg-primary" style="width: <?php echo rand(40, 95); ?>%"></div>
-                                    </div>
-                                </div>
-                                <?php endwhile; ?>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Recent Activity -->
-                    <div class="col-lg-4">
-                        <div class="card h-100">
-                            <div class="card-header">Recent Activity</div>
-                            <div class="card-body p-4">
-                                <?php while($act = mysqli_fetch_assoc($activities)): ?>
-                                <div class="activity-item">
-                                    <div class="activity-icon">
-                                        <i class="bi <?php echo $act['type'] == 'transaksi' ? 'bi-receipt' : 'bi-box'; ?>"></i>
-                                    </div>
-                                    <div class="fw-bold small mb-1">
-                                        <?php if($act['type'] == 'transaksi'): ?>
-                                            New Transaction <span class="badge <?php echo $act['status'] == 'approved' ? 'bg-success-subtle text-success' : 'bg-warning-subtle text-warning'; ?> p-1 ms-1"><?php echo $act['status']; ?></span>
-                                        <?php else: ?>
-                                            Stock Request <span class="badge bg-primary-subtle text-primary p-1 ms-1"><?php echo $act['status']; ?></span>
+            <!-- Top 5 Agen dan Team Leader -->
+            <div class="row g-4 pb-5">
+                <!-- Top 5 Agen -->
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-white fw-bold border-0 pt-4 px-4"><i class="bi bi-trophy-fill text-warning me-2"></i>Top 5 Agen Terbaik</div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="ps-4">No</th>
+                                            <th>Nama Agen</th>
+                                            <th class="text-end pe-4">Total Omzet</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php $no=1; while($agent = mysqli_fetch_assoc($top_agents)): ?>
+                                        <tr>
+                                            <td class="ps-4 text-muted small fw-bold">#<?php echo $no++; ?></td>
+                                            <td class="fw-bold small"><?php echo $agent['nama_lengkap']; ?></td>
+                                            <td class="text-end pe-4 text-primary fw-bold">Rp <?php echo number_format($agent['total_pendapatan']); ?></td>
+                                        </tr>
+                                        <?php endwhile; ?>
+                                        <?php if(mysqli_num_rows($top_agents) == 0): ?>
+                                        <tr>
+                                            <td colspan="3" class="text-center py-4 text-muted small">Belum ada data penjualan tersedia.</td>
+                                        </tr>
                                         <?php endif; ?>
-                                    </div>
-                                    <p class="text-muted small mb-1">
-                                        <?php echo $act['nama_lengkap']; ?> 
-                                        <?php echo $act['type'] == 'transaksi' ? 'recorded Rp '.number_format($act['info']) : 'requested '.$act['info'].' units'; ?>
-                                    </p>
-                                    <div class="text-muted" style="font-size: 0.65rem;"><?php echo date('M d, H:i', strtotime($act['created_at'])); ?></div>
-                                </div>
-                                <?php endwhile; ?>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Inventory Monitoring Table -->
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <span>Inventory Monitoring</span>
-                        <select class="form-select form-select-sm w-auto border-0 shadow-none bg-light fw-bold text-muted">
-                            <option>All Categories</option>
-                        </select>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table align-middle">
-                                <thead>
-                                    <tr>
-                                        <th>Product Name</th>
-                                        <th>Category</th>
-                                        <th>Stock Level</th>
-                                        <th>Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td><strong>Academic Presentation Bundle</strong></td>
-                                        <td class="text-muted">Print Media</td>
-                                        <td class="fw-600"><?php echo number_format($produk['stok'] ?? 0); ?> units</td>
-                                        <td><span class="badge bg-success-subtle text-success">IN STOCK</span></td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                <!-- Top 5 Team Leader -->
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-white fw-bold border-0 pt-4 px-4"><i class="bi bi-star-fill text-success me-2"></i>Top 5 Team Leader</div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="ps-4">No</th>
+                                            <th>Nama Team Leader</th>
+                                            <th class="text-end pe-4">Total Poin</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php $no=1; while($tl = mysqli_fetch_assoc($top_tls)): ?>
+                                        <tr>
+                                            <td class="ps-4 text-muted small fw-bold">#<?php echo $no++; ?></td>
+                                            <td class="fw-bold small"><?php echo $tl['nama_lengkap']; ?></td>
+                                            <td class="text-end pe-4 text-success fw-bold"><?php echo number_format($tl['poin']); ?> <small class="text-muted fw-normal">Pts</small></td>
+                                        </tr>
+                                        <?php endwhile; ?>
+                                        <?php if(mysqli_num_rows($top_tls) == 0): ?>
+                                        <tr>
+                                            <td colspan="3" class="text-center py-4 text-muted small">Belum ada data poin TL tersedia.</td>
+                                        </tr>
+                                        <?php endif; ?>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </main>
+            </div>
 
-            <footer class="p-4 p-lg-5 text-center mt-auto border-top bg-white">
-                <div class="text-muted small ls-wide">© <?php echo date('Y'); ?> Scholarly Curator Systems. All rights reserved.</div>
-            </footer>
         </div>
     </div>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Konfigurasi Chart.js
+        const ctx = document.getElementById('salesChart').getContext('2d');
+        const labels = <?php echo $labels_js; ?>;
+        const dataPenjualan = <?php echo $data_js; ?>;
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Total Penjualan (Rp)',
+                    data: dataPenjualan,
+                    borderColor: '#0d6efd',
+                    backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                    borderWidth: 3,
+                    pointBackgroundColor: '#0d6efd',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    fill: true,
+                    tension: 0.3 // Lengkungan garis
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return 'Rp ' + context.parsed.y.toLocaleString('id-ID');
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: '#f0f0f0'
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                if(value >= 1000000) return (value / 1000000) + ' Jt';
+                                if(value >= 1000) return (value / 1000) + ' Rb';
+                                return value;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
 </body>
 </html>
