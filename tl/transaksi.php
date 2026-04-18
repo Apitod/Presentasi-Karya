@@ -2,53 +2,49 @@
 require_once 'cek_sesi.php';
 require_once '../koneksi.php';
 
-$is_admin = ($_SESSION['role'] === 'admin');
+$is_tl = ($_SESSION['role'] === 'tl');
+$tl_id_session = $_SESSION['user_id'];
 $pesan = '';
 
-// Proses Setujui Transaksi
-if (isset($_GET['approve']) && $is_admin) {
+// Proses Setujui Transaksi (Forward to Admin)
+if (isset($_GET['approve']) && $is_tl) {
     $trx_id = (int) $_GET['approve'];
-    $trx = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT t.*, u.tl_id AS tl_id_agen FROM transaksi t JOIN users u ON t.agen_id = u.id WHERE t.id = $trx_id AND t.status = 'pending_admin'"));
+    $trx = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT t.* FROM transaksi t JOIN users u ON t.agen_id = u.id WHERE t.id = $trx_id AND t.status = 'pending_tl' AND u.tl_id = $tl_id_session"));
 
     if ($trx) {
-        mysqli_query($koneksi, "UPDATE transaksi SET status = 'approved' WHERE id = $trx_id");
-        if (!empty($trx['tl_id_agen'])) {
-            $tl_id = (int) $trx['tl_id_agen'];
-            // TL tidak mendapatkan poin dari penjualannya sendiri.
-            $cek_role = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT role FROM users WHERE id = " . $trx['agen_id']));
-            if ($cek_role['role'] !== 'tl') {
-                mysqli_query($koneksi, "UPDATE users SET poin = poin + 10 WHERE id = $tl_id AND role = 'tl'");
-            }
-        }
-        $pesan = ['type' => 'success', 'text' => 'Transaksi telah disetujui. Poin TL berhasil ditambahkan.'];
+        // Update ke pending_admin untuk persetujuan akhir
+        mysqli_query($koneksi, "UPDATE transaksi SET status = 'pending_admin' WHERE id = $trx_id");
+        $pesan = ['type' => 'success', 'text' => 'Transaksi disetujui TL dan diteruskan ke Admin untuk finalisasi.'];
     }
 }
 
 // Proses Tolak Transaksi
-if (isset($_GET['reject']) && $is_admin) {
+if (isset($_GET['reject']) && $is_tl) {
     $trx_id = (int) $_GET['reject'];
-    $trx = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT * FROM transaksi WHERE id = $trx_id AND status = 'pending_admin'"));
+    $trx = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT t.* FROM transaksi t JOIN users u ON t.agen_id = u.id WHERE t.id = $trx_id AND t.status = 'pending_tl' AND u.tl_id = $tl_id_session"));
+    
     if ($trx) {
         $agen_id = $trx['agen_id'];
         $jumlah  = $trx['jumlah'];
+        // Kembalikan stok agen
         mysqli_query($koneksi, "UPDATE stok_agen SET stok = stok + $jumlah WHERE agen_id = $agen_id");
+        // Tolak transaksi
         mysqli_query($koneksi, "UPDATE transaksi SET status = 'rejected' WHERE id = $trx_id");
-        $pesan = ['type' => 'warning', 'text' => 'Transaksi ditolak. Stok telah dikembalikan ke agen.'];
+        $pesan = ['type' => 'warning', 'text' => 'Transaksi ditolak oleh TL. Stok dikembalikan ke agen.'];
     }
 }
 
 $filter = isset($_GET['filter']) ? $_GET['filter'] : 'semua';
-$where  = '';
-if ($filter == 'pending_admin')  $where = "WHERE t.status = 'pending_admin'";
-if ($filter == 'pending_tl')  $where = "WHERE t.status = 'pending_tl'";
-if ($filter == 'approved') $where = "WHERE t.status = 'approved'";
-if ($filter == 'rejected') $where = "WHERE t.status = 'rejected'";
+$where  = "WHERE u.tl_id = $tl_id_session ";
+if ($filter == 'pending_tl')  $where .= "AND t.status = 'pending_tl'";
+elseif ($filter == 'pending_admin') $where .= "AND t.status = 'pending_admin'";
+elseif ($filter == 'approved') $where .= "AND t.status = 'approved'";
+elseif ($filter == 'rejected') $where .= "AND t.status = 'rejected'";
 
 $transaksi_list = mysqli_query($koneksi, "
-    SELECT t.*, u.nama_lengkap AS nama_agen, tl.nama_lengkap AS nama_tl 
+    SELECT t.*, u.nama_lengkap AS nama_agen
     FROM transaksi t
     JOIN users u ON t.agen_id = u.id
-    LEFT JOIN users tl ON u.tl_id = tl.id
     $where
     ORDER BY t.created_at DESC
 ");
@@ -58,7 +54,7 @@ $transaksi_list = mysqli_query($koneksi, "
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Audit Transaksi | Panel Admin</title>
+    <title>Validasi Transaksi | Panel Team Leader</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
@@ -80,8 +76,8 @@ $transaksi_list = mysqli_query($koneksi, "
         <div class="flex-grow-1 p-4">
             <div class="d-flex justify-content-between align-items-end mb-4">
                 <div>
-                    <h3 class="fw-bold mb-1">Audit Transaksi</h3>
-                    <p class="text-muted small mb-0">Tinjau dan proses verifikasi penjualan dari agen.</p>
+                    <h3 class="fw-bold mb-1">Validasi Transaksi Agen</h3>
+                    <p class="text-muted small mb-0">Tinjau dan proses verifikasi penjualan dari agen di bawah Anda.</p>
                 </div>
                 <button onclick="window.print()" class="btn btn-outline-secondary btn-sm fw-bold">
                     <i class="bi bi-printer me-1"></i> Cetak Laporan
@@ -99,16 +95,16 @@ $transaksi_list = mysqli_query($koneksi, "
                     <a class="nav-link btn-sm py-1 <?php echo $filter == 'semua' ? 'active' : 'bg-white border text-dark'; ?>" href="?filter=semua">SEMUA</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link btn-sm py-1 <?php echo $filter == 'pending_admin' ? 'active' : 'bg-white border text-dark'; ?>" href="?filter=pending_admin">MENUNGGU ADMIN</a>
+                    <a class="nav-link btn-sm py-1 <?php echo $filter == 'pending_tl' ? 'active' : 'bg-warning text-dark border'; ?>" href="?filter=pending_tl">PERLU DISAHKAN</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link btn-sm py-1 <?php echo $filter == 'pending_tl' ? 'active' : 'bg-white border text-dark'; ?>" href="?filter=pending_tl">MENUNGGU TL</a>
+                    <a class="nav-link btn-sm py-1 <?php echo $filter == 'pending_admin' ? 'active' : 'bg-info text-dark border'; ?>" href="?filter=pending_admin">PROSES ADMIN</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link btn-sm py-1 <?php echo $filter == 'approved' ? 'active' : 'bg-white border text-dark'; ?>" href="?filter=approved">DISETUJUI</a>
+                    <a class="nav-link btn-sm py-1 <?php echo $filter == 'approved' ? 'active' : 'bg-success text-white border-0'; ?>" href="?filter=approved">DISETUJUI TOTAL</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link btn-sm py-1 <?php echo $filter == 'rejected' ? 'active' : 'bg-white border text-dark'; ?>" href="?filter=rejected">DITOLAK</a>
+                    <a class="nav-link btn-sm py-1 <?php echo $filter == 'rejected' ? 'active' : 'bg-danger text-white border-0'; ?>" href="?filter=rejected">DITOLAK</a>
                 </li>
             </ul>
 
@@ -120,11 +116,10 @@ $transaksi_list = mysqli_query($koneksi, "
                                 <tr>
                                     <th class="ps-4">No Ref</th>
                                     <th>Agen</th>
-                                    <th>Team Leader</th>
                                     <th>Pembeli</th>
                                     <th>Jumlah</th>
                                     <th>Total Nilai</th>
-                                    <th>Aksi</th>
+                                    <th>Aksi / Status</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -132,23 +127,26 @@ $transaksi_list = mysqli_query($koneksi, "
                                 <tr>
                                     <td class="ps-4 small text-muted">TRX-<?php echo str_pad($row['id'], 5, '0', STR_PAD_LEFT); ?></td>
                                     <td><strong><?php echo $row['nama_agen']; ?></strong></td>
-                                    <td><span class="small text-muted"><?php echo $row['nama_tl'] ?: '-'; ?></span></td>
                                     <td><?php echo $row['nama_pembeli']; ?></td>
                                     <td class="fw-bold"><?php echo $row['jumlah']; ?></td>
                                     <td class="text-primary fw-bold">Rp <?php echo number_format($row['total_harga']); ?></td>
                                     <td class="aksi-kolom">
-                                        <?php if ($row['status'] == 'pending_admin'): ?>
-                                            <a href="?approve=<?php echo $row['id']; ?>&filter=<?php echo $filter; ?>" class="text-success me-2" title="Setujui"><i class="bi bi-check-circle-fill fs-5"></i></a>
+                                        <?php if ($row['status'] == 'pending_tl'): ?>
+                                            <a href="?approve=<?php echo $row['id']; ?>&filter=<?php echo $filter; ?>" class="text-success me-2" title="Setujui dan teruskan ke Admin"><i class="bi bi-check-circle-fill fs-5"></i></a>
                                             <a href="?reject=<?php echo $row['id']; ?>&filter=<?php echo $filter; ?>" class="text-danger" title="Tolak"><i class="bi bi-x-circle-fill fs-5"></i></a>
+                                        <?php elseif ($row['status'] == 'pending_admin'): ?>
+                                            <span class="badge bg-info text-dark border small">PROSES ADMIN</span>
+                                        <?php elseif ($row['status'] == 'approved'): ?>
+                                            <span class="badge bg-success border small">DISETUJUI</span>
                                         <?php else: ?>
-                                            <span class="badge bg-light text-muted border small"><?php echo strtoupper($row['status']); ?></span>
+                                            <span class="badge bg-danger border small">DITOLAK</span>
                                         <?php endif; ?>
                                     </td>
                                 </tr>
                                 <?php endwhile; ?>
                                 <?php if(mysqli_num_rows($transaksi_list) == 0): ?>
                                 <tr>
-                                    <td colspan="7" class="text-center py-4 text-muted small">Tidak ada data transaksi.</td>
+                                    <td colspan="6" class="text-center py-4 text-muted small">Tidak ada data transaksi dari agen.</td>
                                 </tr>
                                 <?php endif; ?>
                             </tbody>

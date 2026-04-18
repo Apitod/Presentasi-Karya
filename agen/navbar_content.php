@@ -1,8 +1,3 @@
-<!-- ============================================================
-     FILE: agen/navbar_content.php
-     FUNGSI: Menu Navigasi Samping Agen
-     ============================================================ -->
-
 <div class="px-4 py-4">
     <div class="d-flex align-items-center gap-2 mb-4">
         <div class="bg-primary text-white p-2 rounded-3">

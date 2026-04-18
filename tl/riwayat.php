@@ -1,10 +1,4 @@
 <?php
-// ============================================================
-// FILE: tl/riwayat.php
-// FUNGSI: Menampilkan semua riwayat dari agen-agen di tim TL.
-// Termasuk Riwayat Transaksi dan Riwayat Request Stok.
-// ============================================================
-
 require_once 'cek_sesi.php';
 require_once '../koneksi.php';
 
@@ -81,8 +75,8 @@ $request_stok = mysqli_query($koneksi, "
                                     </thead>
                                     <tbody>
                                         <?php
-                                        $badge_class = ['pending' => 'warning text-dark', 'approved' => 'success', 'rejected' => 'danger'];
-                                        $badge_label = ['pending' => '⏳ Pending', 'approved' => '✓ Disetujui', 'rejected' => '✗ Ditolak'];
+                                        $badge_class = ['pending' => 'warning text-dark', 'pending_tl' => 'warning text-dark', 'pending_admin' => 'info text-dark', 'approved' => 'success', 'rejected' => 'danger'];
+                                        $badge_label = ['pending' => '⏳ Pending', 'pending_tl' => '⏳ Menunggu TL', 'pending_admin' => '🔍 Cek Admin', 'approved' => '✓ Disetujui', 'rejected' => '✗ Ditolak'];
                                         while ($trx = mysqli_fetch_assoc($transaksi)):
                                         ?>
                                         <tr>

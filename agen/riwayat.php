@@ -1,9 +1,4 @@
 <?php
-// ============================================================
-// FILE: agen/riwayat.php
-// FUNGSI: Menampilkan semua riwayat transaksi milik agen ini
-// ============================================================
-
 require_once 'cek_sesi.php';
 require_once '../koneksi.php';
 
@@ -112,8 +107,8 @@ $total_data = mysqli_fetch_assoc(mysqli_query(
                                     <tbody>
                                         <?php
                                         $no = 1;
-                                        $badge_class = ['pending' => 'warning text-dark', 'approved' => 'success', 'rejected' => 'danger'];
-                                        $badge_label = ['pending' => '⏳ Pending', 'approved' => '✓ Disetujui', 'rejected' => '✗ Ditolak'];
+                                        $badge_class = ['pending' => 'warning text-dark', 'pending_tl' => 'warning text-dark', 'pending_admin' => 'info text-dark', 'approved' => 'success', 'rejected' => 'danger'];
+                                        $badge_label = ['pending' => '⏳ Pending', 'pending_tl' => '⏳ Menunggu TL', 'pending_admin' => '🔍 Cek Admin', 'approved' => '✓ Disetujui', 'rejected' => '✗ Ditolak'];
 
                                         while ($trx = mysqli_fetch_assoc($transaksi)):
                                         ?>

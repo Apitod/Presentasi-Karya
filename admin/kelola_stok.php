@@ -1,44 +1,26 @@
 <?php
-// ============================================================
-// FILE: admin/kelola_stok.php
-// FUNGSI: Admin menambah stok produk utama dan
-//         menyetujui/menolak request stok dari agen.
-//
-// PEMBARUAN v2: UI overhaul ke clean corporate Bootstrap 5.
-// TL hanya bisa melihat (read-only), tidak bisa tambah stok.
-// ============================================================
-
 require_once 'cek_sesi.php';
 require_once '../koneksi.php';
 
-// Cek apakah yang login adalah Admin (bukan TL)
-// Hanya Admin yang bisa menambah stok dan approve/reject request
 $is_admin = ($_SESSION['role'] === 'admin');
 
 $pesan = '';
 
-// -----------------------------------------------------------
-// PROSES 1: Menambah stok produk utama (hanya Admin)
-// -----------------------------------------------------------
+// proses tambah stok
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['tambah_stok']) && $is_admin) {
-    $jumlah = (int) $_POST['jumlah_stok']; // Paksa ke integer agar aman
+    $jumlah = (int) $_POST['jumlah_stok'];
 
     if ($jumlah <= 0) {
         $pesan = ['type' => 'danger', 'text' => 'Jumlah stok harus lebih dari 0!'];
     } else {
-        // Tambahkan stok ke produk pertama (satu-satunya produk di sistem)
         mysqli_query($koneksi, "UPDATE produk SET stok = stok + $jumlah WHERE id = 1");
         $pesan = ['type' => 'success', 'text' => "Stok berhasil ditambah sebanyak $jumlah unit!"];
     }
 }
-
-// -----------------------------------------------------------
-// PROSES 2: Menyetujui request stok dari agen (hanya Admin)
-// -----------------------------------------------------------
+// proses setujui request
 if (isset($_GET['approve_request']) && $is_admin) {
     $request_id = (int) $_GET['approve_request'];
 
-    // Ambil detail request yang akan disetujui (hanya yang masih pending)
     $req = mysqli_fetch_assoc(mysqli_query(
         $koneksi,
         "SELECT * FROM request_stok WHERE id = $request_id AND status = 'pending'"
@@ -48,14 +30,11 @@ if (isset($_GET['approve_request']) && $is_admin) {
         $jumlah  = $req['jumlah'];
         $agen_id = $req['agen_id'];
 
-        // Pastikan stok produk utama cukup untuk memenuhi request ini
         $produk = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT stok FROM produk WHERE id = 1"));
 
         if ($produk['stok'] < $jumlah) {
-            // Stok tidak cukup, tampilkan pesan error
             $pesan = ['type' => 'danger', 'text' => "Stok produk tidak cukup! Tersisa {$produk['stok']} unit, request butuh $jumlah unit."];
         } else {
-            // Kurangi stok produk utama sebesar jumlah request
             mysqli_query($koneksi, "UPDATE produk SET stok = stok - $jumlah WHERE id = 1");
 
             // Tambahkan stok ke akun agen yang mengajukan request
@@ -80,9 +59,8 @@ if (isset($_GET['approve_request']) && $is_admin) {
     }
 }
 
-// -----------------------------------------------------------
-// PROSES 3: Menolak request stok dari agen (hanya Admin)
-// -----------------------------------------------------------
+
+// proses tolak request
 if (isset($_GET['reject_request']) && $is_admin) {
     $request_id = (int) $_GET['reject_request'];
     // Cukup ubah status menjadi 'rejected', stok tidak berubah
@@ -90,13 +68,12 @@ if (isset($_GET['reject_request']) && $is_admin) {
     $pesan = ['type' => 'warning', 'text' => 'Request stok telah ditolak.'];
 }
 
-// Ambil data produk utama untuk ditampilkan di kartu info stok
+// data produk
 $produk = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT * FROM produk LIMIT 1"));
 
-// Ambil semua request stok yang masih pending, beserta nama agen
-// Urutkan dari yang paling lama (FIFO: first in, first out)
+// data request pending
 $request_list = mysqli_query($koneksi, "
-    SELECT r.*, u.nama_lengkap AS nama_agen
+    SELECT r.*, u.nama_lengkap AS nama_pemohon, u.role
     FROM request_stok r
     JOIN users u ON r.agen_id = u.id
     WHERE r.status = 'pending'
@@ -120,7 +97,7 @@ $request_list = mysqli_query($koneksi, "
         <?php require_once 'navbar.php'; ?>
 
         <div class="flex-grow-1 p-4">
-            <!-- Header Halaman -->
+            <!-- header -->
             <div class="mb-4">
                 <h3 class="page-title mb-1">
                     <i class="bi bi-boxes me-2 text-primary"></i> Kelola Stok
@@ -142,7 +119,7 @@ $request_list = mysqli_query($koneksi, "
             <?php endif; ?>
 
             <div class="row g-4">
-                <!-- Kolom Kiri: Info Stok + Form Tambah Stok -->
+                <!-- info stok -->
                 <div class="col-md-5">
                     <!-- Kartu Info Stok Saat Ini -->
                     <div class="card shadow-sm border-0 rounded-4 mb-4">
@@ -170,7 +147,7 @@ $request_list = mysqli_query($koneksi, "
                         </div>
                     </div>
 
-                    <!-- Form Tambah Stok (hanya untuk Admin) -->
+                    <!-- form tambah stok -->
                     <?php if ($is_admin): ?>
                     <div class="card shadow-sm border-0 rounded-4">
                         <div class="card-header fw-semibold border-0 rounded-top-4" style="background:#1a1a2e; color:#fff;">
@@ -203,12 +180,12 @@ $request_list = mysqli_query($koneksi, "
                     <?php endif; ?>
                 </div>
 
-                <!-- Kolom Kanan: Daftar Request Stok Pending -->
+                <!-- daftar request -->
                 <div class="col-md-7">
                     <div class="card shadow-sm border-0 rounded-4">
                         <div class="card-header fw-semibold border-0 rounded-top-4 d-flex align-items-center gap-2"
                              style="background:#1a1a2e; color:#fff;">
-                            <i class="bi bi-inbox me-1"></i> Request Stok dari Agen
+                            <i class="bi bi-inbox me-1"></i> Request Stok dari Agen & TL
                             <!-- Badge jumlah request yang menunggu -->
                             <span class="badge bg-warning text-dark ms-auto">
                                 <?php echo mysqli_num_rows($request_list); ?> pending
@@ -225,7 +202,7 @@ $request_list = mysqli_query($koneksi, "
                                     <table class="table table-hover align-middle mb-0">
                                         <thead class="table-light">
                                             <tr>
-                                                <th class="ps-4">Agen</th>
+                                                <th class="ps-4">Pemohon</th>
                                                 <th class="text-center">Jumlah</th>
                                                 <th>Catatan</th>
                                                 <?php if ($is_admin): ?>
@@ -238,7 +215,8 @@ $request_list = mysqli_query($koneksi, "
                                                 <tr>
                                                     <td class="ps-4">
                                                         <i class="bi bi-person me-2 text-muted"></i>
-                                                        <strong><?php echo htmlspecialchars($req['nama_agen']); ?></strong>
+                                                        <strong><?php echo htmlspecialchars($req['nama_pemohon']); ?></strong>
+                                                        <span class="badge bg-light text-dark border small ms-1"><?php echo strtoupper($req['role']); ?></span>
                                                         <br>
                                                         <small class="text-muted">
                                                             <?php echo date('d/m/Y H:i', strtotime($req['created_at'])); ?>
@@ -259,7 +237,7 @@ $request_list = mysqli_query($koneksi, "
                                                             <!-- Tombol Setujui -->
                                                             <a href="?approve_request=<?php echo $req['id']; ?>"
                                                                class="btn btn-success btn-sm rounded-3 me-1"
-                                                               onclick="return confirm('Setujui request stok <?php echo $req['jumlah']; ?> unit dari <?php echo htmlspecialchars($req['nama_agen']); ?>?')">
+                                                               onclick="return confirm('Setujui request stok <?php echo $req['jumlah']; ?> unit dari <?php echo htmlspecialchars($req['nama_pemohon']); ?>?')">
                                                                 <i class="bi bi-check-lg"></i>
                                                             </a>
                                                             <!-- Tombol Tolak -->

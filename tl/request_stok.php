@@ -26,8 +26,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             // --- PROSES KIRIM NOTIFIKASI TELEGRAM DENGAN CURL ---
             $nama_agen = $_SESSION['nama_lengkap'];
             $teks_pesan = "🔔 *Permintaan Stok Baru!*\n"
-                        . "Agen   : *$nama_agen*\n"
-                        . "Jumlah : *$jumlah unit*\n"
+                        . "Team Leader : *$nama_agen*\n"
+                        . "Jumlah      : *$jumlah unit*\n"
                         . "Catatan: " . ($catatan ?: '-') . "\n"
                         . "Status : _Menunggu Persetujuan_";
 
@@ -73,7 +73,7 @@ $riwayat_request = mysqli_query($koneksi, "SELECT * FROM request_stok WHERE agen
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Permintaan Stok | Panel Agen</title>
+    <title>Permintaan Stok | Panel Team Leader</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">

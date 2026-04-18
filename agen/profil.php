@@ -1,10 +1,4 @@
 <?php
-// ============================================================
-// FILE: agen/profil.php
-// FUNGSI: Agen dapat melihat dan mengedit profil sendiri
-//         (nama, alamat, username, password)
-// ============================================================
-
 require_once 'cek_sesi.php';
 require_once '../koneksi.php';
 
@@ -17,9 +11,8 @@ $agen = mysqli_fetch_assoc(mysqli_query(
     "SELECT * FROM users WHERE id = $agen_id"
 ));
 
-// -----------------------------------------------------------
+
 // PROSES: Simpan perubahan profil
-// -----------------------------------------------------------
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $nama          = trim($_POST['nama_lengkap']);
     $alamat        = trim($_POST['alamat']);

@@ -1,8 +1,4 @@
 <?php
-// ============================================================
-// FILE: admin/kelola_agen.php
-// FUNGSI: Manajemen Agen (CRUD) - Versi Refactored & Indonesia
-// ============================================================
 
 require_once 'cek_sesi.php';
 require_once '../koneksi.php';
@@ -10,7 +6,7 @@ require_once '../koneksi.php';
 $is_admin = ($_SESSION['role'] === 'admin');
 $pesan = '';
 
-// Proses Simpan Agen Baru (Hanya Admin)
+// proses simpan agen
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['tambah_agen']) && $is_admin) {
     $nama     = trim($_POST['nama_lengkap']);
     $alamat   = trim($_POST['alamat']);
@@ -32,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['tambah_agen']) && $is_
             $nama_aman     = mysqli_real_escape_string($koneksi, $nama);
             $alamat_aman   = mysqli_real_escape_string($koneksi, $alamat);
             $nik_aman      = mysqli_real_escape_string($koneksi, $nik);
-            $tl_sql = ($tl_id > 0) ? $tl_id : 'NULL';
+            $tl_sql = $tl_id;
 
             $query = "INSERT INTO users (nama_lengkap, username, password, role, tl_id, alamat, nik) 
                       VALUES ('$nama_aman', '$username_aman', '$password_hash', 'agen', $tl_sql, '$alamat_aman', '$nik_aman')";
@@ -46,17 +42,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['tambah_agen']) && $is_
     }
 }
 
-// Proses Hapus Agen
+// proses hapus agen
 if (isset($_GET['hapus']) && $is_admin) {
     $hapus_id = (int) $_GET['hapus'];
     mysqli_query($koneksi, "DELETE FROM users WHERE id = $hapus_id AND role = 'agen'");
     $pesan = ['type' => 'warning', 'text' => 'Data agen telah dihapus.'];
 }
 
-// Data TL untuk dropdown
+// data team leader
 $daftar_tl = mysqli_query($koneksi, "SELECT id, nama_lengkap FROM users WHERE role = 'tl' ORDER BY nama_lengkap ASC");
 
-// Data Agen sesuai role login
+// data agen
 if ($is_admin) {
     $where_agen = "WHERE u.role = 'agen'";
 } else {
@@ -174,8 +170,8 @@ $daftar_agen = mysqli_query($koneksi, "
                     </div>
                     <div class="mb-3">
                         <label class="form-label small fw-bold">Team Leader</label>
-                        <select name="tl_id" class="form-select">
-                            <option value="0">Tanpa Team Leader (Independen)</option>
+                        <select name="tl_id" class="form-select" required>
+                            <option value="" disabled selected>Pilih Team Leader</option>
                             <?php mysqli_data_seek($daftar_tl, 0); while($tl = mysqli_fetch_assoc($daftar_tl)): ?>
                                 <option value="<?php echo $tl['id']; ?>"><?php echo $tl['nama_lengkap']; ?></option>
                             <?php endwhile; ?>

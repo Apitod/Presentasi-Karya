@@ -1,9 +1,4 @@
 <?php
-// ============================================================
-// FILE: admin/kelola_tl.php
-// FUNGSI: Manajemen Team Leader - Panel Admin
-// ============================================================
-
 require_once 'cek_sesi.php';
 require_once '../koneksi.php';
 
@@ -14,7 +9,7 @@ if ($_SESSION['role'] !== 'admin') {
 
 $pesan = '';
 
-// Proses Simpan TL Baru
+// Proses simpan team leader
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['save_tl'])) {
     $nama     = trim($_POST['nama_lengkap']);
     $username = trim($_POST['username']);
@@ -42,12 +37,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['save_tl'])) {
     }
 }
 
-// Proses Hapus TL
+// Proses hapus team leader
 if (isset($_GET['delete'])) {
     $hapus_id = (int) $_GET['delete'];
     mysqli_query($koneksi, "DELETE FROM users WHERE id = $hapus_id AND role = 'tl'");
     mysqli_query($koneksi, "UPDATE users SET tl_id = NULL WHERE tl_id = $hapus_id");
     $pesan = ['type' => 'warning', 'text' => 'Akun Team Leader dihapus. Agen terkait telah dilepaskan.'];
+}
+
+// Proses tukar poin
+if (isset($_GET['tukar_poin'])) {
+    $tl_id = (int) $_GET['tukar_poin'];
+    $cek_tl = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT poin, nama_lengkap FROM users WHERE id = $tl_id AND role = 'tl'"));
+    
+    if ($cek_tl && $cek_tl['poin'] >= 5) {
+        mysqli_query($koneksi, "UPDATE users SET poin = poin - 5 WHERE id = $tl_id");
+        $pesan = ['type' => 'success', 'text' => "Berhasil menukar 5 poin untuk Team Leader " . $cek_tl['nama_lengkap'] . "."];
+    } else {
+        $pesan = ['type' => 'danger', 'text' => 'Gagal: Poin tidak mencukupi untuk ditukar.'];
+    }
 }
 
 $daftar_tl = mysqli_query($koneksi, "
@@ -112,6 +120,11 @@ $daftar_tl = mysqli_query($koneksi, "
                                     <td><span class="badge bg-light text-dark border px-3"><?php echo $tl['jumlah_agen']; ?> Agen</span></td>
                                     <td class="fw-bold text-success"><?php echo number_format($tl['poin']); ?> Poin</td>
                                     <td class="text-center">
+                                        <?php if ($tl['poin'] >= 5): ?>
+                                            <a href="?tukar_poin=<?php echo $tl['id']; ?>" class="btn btn-sm btn-success me-1" onclick="return confirm('Tukar 5 Poin untuk <?php echo $tl['nama_lengkap']; ?>?')"><i class="bi bi-gift text-white"></i> Tukar 5 Poin</a>
+                                        <?php else: ?>
+                                            <button class="btn btn-sm btn-secondary me-1 opacity-50" disabled><i class="bi bi-gift text-white"></i> Tukar 5 Poin</button>
+                                        <?php endif; ?>
                                         <a href="?delete=<?php echo $tl['id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Hapus privilege kepemimpinan TL ini?')"><i class="bi bi-trash"></i></a>
                                     </td>
                                 </tr>
@@ -128,7 +141,7 @@ $daftar_tl = mysqli_query($koneksi, "
         </div>
     </div>
 
-    <!-- Modal Form Tambah TL -->
+    <!-- Modal Tambah TL -->
     <div class="modal fade" id="modalTambahTL" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <form method="POST" action="" class="modal-content shadow">

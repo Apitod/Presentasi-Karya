@@ -1,9 +1,4 @@
 <?php
-// ============================================================
-// FILE: tl/dashboard.php
-// FUNGSI: Dasbor Team Leader - Bersih & Fungsional (Dengan Analitik)
-// ============================================================
-
 require_once 'cek_sesi.php';
 require_once '../koneksi.php';
 
@@ -178,8 +173,12 @@ $recent_sales = mysqli_query($koneksi, "
                                     <td class="fw-bold small"><?php echo $row['nama_lengkap']; ?></td>
                                     <td class="text-primary fw-bold">Rp <?php echo number_format($row['total_harga']); ?></td>
                                     <td>
-                                        <span class="badge <?php echo $row['status'] == 'approved' ? 'bg-success' : 'bg-warning text-dark'; ?> rounded-pill small" style="font-size: 0.65rem;">
-                                            <?php echo strtoupper($row['status']); ?>
+                                        <?php 
+                                        $bdg_class = ['pending_tl' => 'bg-warning text-dark', 'pending_admin' => 'bg-info text-dark', 'approved' => 'bg-success', 'rejected' => 'bg-danger'];
+                                        $bdg_text  = ['pending_tl' => 'MENUNGGU TL', 'pending_admin' => 'CEK ADMIN', 'approved' => 'DISETUJUI', 'rejected' => 'DITOLAK'];
+                                        ?>
+                                        <span class="badge <?php echo $bdg_class[$row['status']] ?? 'bg-secondary'; ?> rounded-pill small" style="font-size: 0.65rem;">
+                                            <?php echo $bdg_text[$row['status']] ?? strtoupper($row['status']); ?>
                                         </span>
                                     </td>
                                 </tr>

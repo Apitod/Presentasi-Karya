@@ -1,10 +1,4 @@
 <?php
-// ============================================================
-// FILE: tl/kelola_agen.php
-// FUNGSI: Team Leader (TL) melihat daftar agen di bawah naungannya.
-// TL bersifat read-only untuk pengelolaan agen.
-// ============================================================
-
 require_once 'cek_sesi.php';
 require_once '../koneksi.php';
 

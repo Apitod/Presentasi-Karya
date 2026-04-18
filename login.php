@@ -1,11 +1,7 @@
 <?php
-// ============================================================
-// FILE: login.php
-// FUNGSI: Halaman login yang bersih dan fungsional.
-// ============================================================
 session_start();
 
-// Redirect otomatis jika user sudah memiliki session aktif
+// redirect login
 if (isset($_SESSION['user_id'])) {
     if ($_SESSION['role'] == 'admin') { header("Location: admin/dashboard.php"); }
     elseif ($_SESSION['role'] == 'tl') { header("Location: tl/dashboard.php"); }
@@ -16,6 +12,7 @@ if (isset($_SESSION['user_id'])) {
 require 'koneksi.php';
 $error = '';
 
+// proses login
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $username = mysqli_real_escape_string($koneksi, trim($_POST['username']));
     $password = md5(trim($_POST['password']));
@@ -56,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <div class="login-card">
         <div class="text-center mb-4">
             <h1 class="h3 fw-bold">Login</h1>
-            <p class="text-muted small">Masuk ke Sistem Manajemen Karyawan</p>
+            <p class="text-muted small">Sistem Manajemen Agen</p>
         </div>
 
         <?php if ($error): ?>
@@ -66,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <form action="" method="POST">
             <div class="mb-3">
                 <label class="form-label small fw-bold">Username</label>
-                <input type="text" name="username" class="form-control" placeholder="Masukkan username" required autocomplete="off">
+                <input type="text" name="username" class="form-control" placeholder="Masukkan username" required autocomplete="on">
             </div>
             <div class="mb-3">
                 <label class="form-label small fw-bold">Password</label>
@@ -75,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <button type="submit" class="btn btn-primary w-100">Masuk</button>
         </form>
         <div class="text-center mt-4 text-muted small">
-            &copy; <?php echo date('Y'); ?> Sistem Internal
+            &copy; <?php echo date('Y'); ?> Sistem Manajemen Agen
         </div>
     </div>
 </body>

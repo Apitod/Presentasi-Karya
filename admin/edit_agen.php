@@ -1,16 +1,9 @@
 <?php
-// ============================================================
-// FILE: admin/edit_agen.php
-// FUNGSI: Admin mengedit data profil agen (nama, NIK, alamat,
-//         username, password, dan Team Leader).
-//
-// PEMBARUAN v2: Tambah dropdown untuk mengubah TL atasan agen.
-// ============================================================
 
 require_once 'cek_sesi.php';
 require_once '../koneksi.php';
 
-// Hanya Admin yang boleh mengedit agen
+// cek hak akses
 if ($_SESSION['role'] !== 'admin') {
     header('Location: kelola_agen.php');
     exit;
@@ -18,44 +11,40 @@ if ($_SESSION['role'] !== 'admin') {
 
 $pesan = '';
 
-// Ambil ID agen dari parameter URL (contoh: edit_agen.php?id=3)
+// ambil id agen
 if (!isset($_GET['id'])) {
     header('Location: kelola_agen.php');
     exit;
 }
 
-$agen_id = (int) $_GET['id']; // Paksa ke integer untuk keamanan
+$agen_id = (int) $_GET['id'];
 
-// Ambil data agen yang akan diedit (pastikan role-nya memang 'agen')
+// ambil data agen
 $agen = mysqli_fetch_assoc(mysqli_query(
     $koneksi,
     "SELECT * FROM users WHERE id = $agen_id AND role = 'agen'"
 ));
 
-// Jika ID tidak ditemukan atau bukan agen, kembalikan ke daftar
 if (!$agen) {
     header('Location: kelola_agen.php');
     exit;
 }
 
-// Ambil daftar semua TL untuk dropdown pilihan
+// ambil daftar team leader
 $daftar_tl = mysqli_query($koneksi, "SELECT id, nama_lengkap FROM users WHERE role = 'tl' ORDER BY nama_lengkap ASC");
 
-// -----------------------------------------------------------
-// PROSES: Simpan perubahan data agen ke database
-// -----------------------------------------------------------
+// proses simpan perubahan
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $nama          = trim($_POST['nama_lengkap']);
     $alamat        = trim($_POST['alamat']);
     $nik           = trim($_POST['nik']);
     $username      = trim($_POST['username']);
     $password_baru = trim($_POST['password_baru']);
-    $tl_id         = (int) $_POST['tl_id']; // BARU: ID TL yang dipilih admin
+    $tl_id         = (int) $_POST['tl_id'];
 
     if (empty($nama) || empty($username) || empty($nik)) {
         $pesan = ['type' => 'danger', 'text' => 'Nama, NIK, dan Username wajib diisi!'];
     } else {
-        // Pastikan username tidak dipakai user LAIN (kecuali dirinya sendiri)
         $username_aman = mysqli_real_escape_string($koneksi, $username);
         $cek = mysqli_fetch_assoc(mysqli_query(
             $koneksi,
@@ -69,11 +58,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $alamat_aman = mysqli_real_escape_string($koneksi, $alamat);
             $nik_aman    = mysqli_real_escape_string($koneksi, $nik);
 
-            // Tentukan nilai tl_id: jika admin memilih "Tanpa TL", simpan NULL
-            $tl_sql = ($tl_id > 0) ? $tl_id : 'NULL';
+            $tl_sql = $tl_id;
 
-            // Jika admin mengisi password baru, sertakan dalam query UPDATE
-            // Jika tidak, password lama tetap dipakai (tidak diubah)
             if (!empty($password_baru)) {
                 $pass_hash = md5($password_baru);
                 $query = "UPDATE users SET
@@ -85,7 +71,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                             tl_id        = $tl_sql
                           WHERE id = $agen_id AND role = 'agen'";
             } else {
-                // Tidak update password, hanya data profil + tl_id
                 $query = "UPDATE users SET
                             nama_lengkap = '$nama_aman',
                             alamat       = '$alamat_aman',
@@ -97,12 +82,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
             if (mysqli_query($koneksi, $query)) {
                 $pesan = ['type' => 'success', 'text' => 'Data agen berhasil diperbarui!'];
-                // Refresh data agen setelah update agar form menampilkan data terbaru
                 $agen = mysqli_fetch_assoc(mysqli_query(
                     $koneksi,
                     "SELECT * FROM users WHERE id = $agen_id"
                 ));
-                // Reset resource TL agar bisa di-loop ulang
                 mysqli_data_seek($daftar_tl, 0);
             } else {
                 $pesan = ['type' => 'danger', 'text' => 'Gagal memperbarui data: ' . mysqli_error($koneksi)];
@@ -128,7 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <?php require_once 'navbar.php'; ?>
 
         <div class="flex-grow-1 p-4">
-            <!-- Header -->
+            <!-- header -->
             <div class="mb-4">
                 <a href="kelola_agen.php" class="btn btn-sm btn-outline-secondary rounded-3 mb-3">
                     <i class="bi bi-arrow-left me-1"></i> Kembali ke Daftar Agen
@@ -158,7 +141,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                             <!-- action tetap bawa ?id=X agar PHP tahu agen mana yang diedit -->
                             <form method="POST" action="?id=<?php echo $agen_id; ?>">
 
-                                <!-- SEKSI: Data Profil -->
+                                <!-- data profil -->
                                 <p class="text-muted small fw-bold text-uppercase mb-3 border-bottom pb-2">
                                     <i class="bi bi-person me-1"></i> Data Profil
                                 </p>
@@ -187,17 +170,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                     ?></textarea>
                                 </div>
 
-                                <!-- BARU: Dropdown pilih Team Leader -->
                                 <div class="mb-3">
                                     <label for="tl_id" class="form-label small fw-semibold">
                                         <i class="bi bi-person-badge me-1"></i> Team Leader Atasan
                                     </label>
-                                    <select class="form-select rounded-3" id="tl_id" name="tl_id">
-                                        <option value="0">-- Tanpa Team Leader --</option>
+                                    <select class="form-select rounded-3" id="tl_id" name="tl_id" required>
+                                        <option value="" disabled>-- Pilih Team Leader --</option>
                                         <?php while ($tl = mysqli_fetch_assoc($daftar_tl)): ?>
                                             <option value="<?php echo $tl['id']; ?>"
                                                 <?php echo ($agen['tl_id'] == $tl['id']) ? 'selected' : ''; ?>>
-                                                <!-- 'selected' menandai opsi yang sudah tersimpan sebelumnya -->
                                                 <?php echo htmlspecialchars($tl['nama_lengkap']); ?>
                                             </option>
                                         <?php endwhile; ?>
@@ -207,7 +188,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
                                 <hr class="my-4">
 
-                                <!-- SEKSI: Data Akun Login -->
+                                <!-- data akun -->
                                 <p class="text-muted small fw-bold text-uppercase mb-3 border-bottom pb-2">
                                     <i class="bi bi-key me-1"></i> Data Akun Login
                                 </p>

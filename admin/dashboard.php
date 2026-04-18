@@ -1,8 +1,4 @@
 <?php
-// ============================================================
-// FILE: admin/dashboard.php
-// FUNGSI: Dasbor Utama Admin - Ditambah Grafik & Top Agen/TL
-// ============================================================
 
 require_once 'cek_sesi.php';
 require_once '../koneksi.php';
@@ -10,7 +6,7 @@ require_once '../koneksi.php';
 // Ambil Statistik
 $stok_global = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT SUM(stok) as total FROM produk"))['total'] ?? 0;
 $total_agen = mysqli_num_rows(mysqli_query($koneksi, "SELECT id FROM users WHERE role = 'agen'"));
-$transaksi_pending = mysqli_num_rows(mysqli_query($koneksi, "SELECT id FROM transaksi WHERE status = 'pending'"));
+$transaksi_pending = mysqli_num_rows(mysqli_query($koneksi, "SELECT id FROM transaksi WHERE status = 'pending_admin'"));
 $request_stok_pending = mysqli_num_rows(mysqli_query($koneksi, "SELECT id FROM request_stok WHERE status = 'pending'"));
 
 // Data Kinerja Agen (Top 5 berdasarkan total pendapatan disetujui)
@@ -100,14 +96,14 @@ $data_js = json_encode(array_values($data_penjualan));
                 </div>
                 <div class="col-md-3">
                     <div class="card border-0 shadow-sm p-3 h-100">
-                        <div class="text-muted small fw-bold text-uppercase mb-2">Trx Menunggu</div>
+                        <div class="text-muted small fw-bold text-uppercase mb-2">Transaksi Pending</div>
                         <h3 class="fw-bold mb-0 text-warning"><?php echo $transaksi_pending; ?> <small class="fs-6 text-muted">Data</small></h3>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="card border-0 shadow-sm p-3 h-100">
-                        <div class="text-muted small fw-bold text-uppercase mb-2">Req Stok Baru</div>
-                        <h3 class="fw-bold mb-0 text-danger"><?php echo $request_stok_pending; ?> <small class="fs-6 text-muted">Req</small></h3>
+                        <div class="text-muted small fw-bold text-uppercase mb-2">Request Stok</div>
+                        <h3 class="fw-bold mb-0 text-danger"><?php echo $request_stok_pending; ?> <small class="fs-6 text-muted">Request</small></h3>
                     </div>
                 </div>
             </div>

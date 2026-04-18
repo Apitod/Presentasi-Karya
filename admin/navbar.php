@@ -1,8 +1,4 @@
 <?php
-// ============================================================
-// FILE: admin/navbar.php
-// FUNGSI: Sidebar container for Admin
-// ============================================================
 ?>
 <!-- Sidebar Desktop -->
 <aside class="d-none d-lg-flex flex-column flex-shrink-0 text-white" 

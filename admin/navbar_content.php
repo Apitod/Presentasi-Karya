@@ -1,7 +1,3 @@
-<!-- ============================================================
-     FILE: admin/navbar_content.php
-     FUNGSI: Menu Navigasi Samping Admin
-     ============================================================ -->
 
 <div class="px-4 py-4">
     <div class="d-flex align-items-center gap-2 mb-4">

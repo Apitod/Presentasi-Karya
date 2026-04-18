@@ -1,10 +1,4 @@
 <?php
-// ============================================================
-// FILE: admin/riwayat.php
-// FUNGSI: Menampilkan semua riwayat dari seluruh sistem.
-// Termasuk Riwayat Transaksi dan Riwayat Request Stok.
-// ============================================================
-
 require_once 'cek_sesi.php';
 require_once '../koneksi.php';
 

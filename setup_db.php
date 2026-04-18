@@ -1,21 +1,13 @@
 <?php
-// ============================================================
-// FILE: setup_db.php
-// FUNGSI: Membuat database dan tabel secara otomatis
-// Jalankan file ini SEKALI saja di browser untuk setup awal
-// Contoh: http://localhost/PresentasiKarya/setup_db.php
-// ============================================================
-
-// Koneksi ke MySQL tanpa memilih database dulu
+// koneksi database
 $conn = mysqli_connect('localhost', 'belajarphp', '1379');
 
 if (!$conn) {
     die("Koneksi gagal: " . mysqli_connect_error());
 }
 
-// -----------------------------------------------------------
-// LANGKAH 1: Buat database jika belum ada
-// -----------------------------------------------------------
+
+// buat database
 $sql_create_db = "CREATE DATABASE IF NOT EXISTS presentasi_karya CHARACTER SET utf8 COLLATE utf8_general_ci";
 mysqli_query($conn, $sql_create_db);
 
@@ -23,12 +15,8 @@ mysqli_query($conn, $sql_create_db);
 mysqli_select_db($conn, 'presentasi_karya');
 mysqli_set_charset($conn, "utf8");
 
-// -----------------------------------------------------------
-// LANGKAH 2: Buat tabel 'users' (untuk admin, team leader, dan agen)
-// -----------------------------------------------------------
-// Tabel ini menyimpan data akun pengguna sistem.
-// PERUBAHAN v2: Ditambahkan role 'tl' (Team Leader), kolom tl_id (atasan agen),
-// dan kolom poin (reward poin untuk TL).
+
+// buat tabel users
 $sql_users = "
 CREATE TABLE IF NOT EXISTS users (
     id           INT AUTO_INCREMENT PRIMARY KEY,
@@ -44,23 +32,15 @@ CREATE TABLE IF NOT EXISTS users (
 )";
 mysqli_query($conn, $sql_users);
 
-// -----------------------------------------------------------
-// MIGRASI: Perbarui tabel 'users' yang SUDAH ADA di database
-// Jika database sudah pernah dibuat sebelumnya (v1), jalankan
-// ALTER TABLE ini untuk menambahkan kolom/mengubah tipe data.
-// -----------------------------------------------------------
+
+// migrasi tabel users
 
 // Langkah A: Ubah kolom 'role' agar mendukung nilai 'tl' (Team Leader)
 // MODIFY COLUMN aman dijalankan berulang kali
 mysqli_query($conn, "ALTER TABLE users MODIFY COLUMN role ENUM('admin', 'tl', 'agen') NOT NULL");
 
-// -----------------------------------------------------------
+
 // CATATAN TEKNIS: Sintaks "ADD COLUMN IF NOT EXISTS" hanya
-// didukung MariaDB, TIDAK oleh MySQL murni. Solusinya:
-// kita cek dulu lewat INFORMATION_SCHEMA apakah kolom sudah
-// ada, baru jalankan ALTER TABLE jika belum. Cara ini
-// kompatibel dengan semua versi MySQL maupun MariaDB.
-// -----------------------------------------------------------
 
 // Langkah B: Tambahkan kolom 'tl_id' jika belum ada
 // tl_id menyimpan ID Team Leader yang menaungi agen
@@ -88,10 +68,8 @@ if (!$cek_poin) {
     mysqli_query($conn, "ALTER TABLE users ADD COLUMN poin INT DEFAULT 0 AFTER tl_id");
 }
 
-// -----------------------------------------------------------
-// LANGKAH 3: Buat tabel 'produk' (hanya 1 produk utama)
-// -----------------------------------------------------------
-// Tabel ini menyimpan data produk tunggal beserta stok globalnya
+
+// buat tabel produk
 $sql_produk = "
 CREATE TABLE IF NOT EXISTS produk (
     id INT AUTO_INCREMENT PRIMARY KEY,       -- ID produk
@@ -101,10 +79,8 @@ CREATE TABLE IF NOT EXISTS produk (
 )";
 mysqli_query($conn, $sql_produk);
 
-// -----------------------------------------------------------
-// LANGKAH 4: Buat tabel 'stok_agen' (stok milik setiap agen)
-// -----------------------------------------------------------
-// Setiap agen punya stok sendiri yang diterima dari admin
+
+// buat tabel stok_agen
 $sql_stok_agen = "
 CREATE TABLE IF NOT EXISTS stok_agen (
     id INT AUTO_INCREMENT PRIMARY KEY,       -- ID record
@@ -114,10 +90,8 @@ CREATE TABLE IF NOT EXISTS stok_agen (
 )";
 mysqli_query($conn, $sql_stok_agen);
 
-// -----------------------------------------------------------
-// LANGKAH 5: Buat tabel 'request_stok' (permintaan stok dari agen)
-// -----------------------------------------------------------
-// Agen mengajukan request, admin yang menyetujui
+
+// buat tabel request_stok
 $sql_request = "
 CREATE TABLE IF NOT EXISTS request_stok (
     id INT AUTO_INCREMENT PRIMARY KEY,       -- ID request
@@ -130,10 +104,8 @@ CREATE TABLE IF NOT EXISTS request_stok (
 )";
 mysqli_query($conn, $sql_request);
 
-// -----------------------------------------------------------
-// LANGKAH 6: Buat tabel 'transaksi' (penjualan oleh agen)
-// -----------------------------------------------------------
-// Menyimpan setiap transaksi penjualan yang dilakukan agen
+
+// buat tabel transaksi
 $sql_transaksi = "
 CREATE TABLE IF NOT EXISTS transaksi (
     id INT AUTO_INCREMENT PRIMARY KEY,       -- ID transaksi
@@ -142,23 +114,23 @@ CREATE TABLE IF NOT EXISTS transaksi (
     jumlah INT NOT NULL,                     -- Jumlah produk yang terjual
     total_harga DECIMAL(10,2) NOT NULL,      -- Total harga penjualan
     bukti_transaksi VARCHAR(255) NOT NULL,   -- Nama file gambar bukti transaksi (disimpan di folder uploads/)
-    status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending', -- Status persetujuan admin
+    status ENUM('pending_tl', 'pending_admin', 'approved', 'rejected') DEFAULT 'pending_tl', -- Status persetujuan bertingkat
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Waktu transaksi dibuat
     FOREIGN KEY (agen_id) REFERENCES users(id) ON DELETE CASCADE
 )";
 mysqli_query($conn, $sql_transaksi);
 
-// -----------------------------------------------------------
-// LANGKAH 7: Migrasi - ubah tipe kolom bukti_transaksi
-// Untuk database yang SUDAH ada, ubah kolom dari TEXT ke VARCHAR(255)
-// (Diperlukan karena bukti sekarang adalah nama file, bukan teks panjang)
-// -----------------------------------------------------------
+
+// migrasi tabel transaksi
 mysqli_query($conn, "ALTER TABLE transaksi MODIFY COLUMN bukti_transaksi VARCHAR(255) NOT NULL");
 // Catatan: Query ini aman dijalankan berulang kali (tidak merusak data)
 
-// -----------------------------------------------------------
-// LANGKAH 8: Masukkan data awal (seeding)
-// -----------------------------------------------------------
+
+// seeding data awal
+
+// Migrasi untuk status transaksi (menambahkan pending_tl dan pending_admin)
+mysqli_query($conn, "ALTER TABLE transaksi MODIFY COLUMN status ENUM('pending_tl', 'pending_admin', 'approved', 'rejected') DEFAULT 'pending_tl'");
+
 
 // Buat akun admin default jika belum ada
 $cek_admin = mysqli_query($conn, "SELECT id FROM users WHERE username = 'admin'");
@@ -176,6 +148,7 @@ if (mysqli_num_rows($cek_produk) == 0) {
                          VALUES ('Produk Unggulan', 100, 205000)");
 }
 
+// tampilan sukses
 echo "
 <!DOCTYPE html>
 <html lang='id'>
@@ -202,6 +175,6 @@ echo "
 </html>
 ";
 
-// Tutup koneksi
+// tutup koneksi
 mysqli_close($conn);
 ?>

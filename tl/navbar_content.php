@@ -1,8 +1,3 @@
-<!-- ============================================================
-     FILE: tl/navbar_content.php
-     FUNGSI: Menu Navigasi Samping Team Leader
-     ============================================================ -->
-
 <div class="px-4 py-4">
     <div class="d-flex align-items-center gap-2 mb-4">
         <div class="bg-primary text-white p-2 rounded-3">
@@ -23,6 +18,21 @@
         <li class="nav-item">
             <a href="kelola_agen.php" class="nav-link py-2 px-3 rounded-2 <?php echo basename($_SERVER['PHP_SELF']) == 'kelola_agen.php' ? 'active bg-primary text-white fw-bold shadow-sm' : 'text-secondary'; ?>">
                 <i class="bi bi-people-fill me-2"></i> Tim Agen Saya
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="transaksi.php" class="nav-link py-2 px-3 rounded-2 <?php echo basename($_SERVER['PHP_SELF']) == 'transaksi.php' ? 'active bg-primary text-white fw-bold shadow-sm' : 'text-secondary'; ?>">
+                <i class="bi bi-clipboard-check-fill me-2"></i> Validasi Transaksi
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="penjualan.php" class="nav-link py-2 px-3 rounded-2 <?php echo basename($_SERVER['PHP_SELF']) == 'penjualan.php' ? 'active bg-primary text-white fw-bold shadow-sm' : 'text-secondary'; ?>">
+                <i class="bi bi-cart-plus-fill me-2"></i> Penjualan Pribadi
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="request_stok.php" class="nav-link py-2 px-3 rounded-2 <?php echo basename($_SERVER['PHP_SELF']) == 'request_stok.php' ? 'active bg-primary text-white fw-bold shadow-sm' : 'text-secondary'; ?>">
+                <i class="bi bi-box-arrow-in-down me-2"></i> Request Stok
             </a>
         </li>
         <li class="nav-item">

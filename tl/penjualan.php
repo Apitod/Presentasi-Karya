@@ -37,9 +37,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_sale'])) {
                     $total  = $produk['harga'] * $jumlah;
                     $nama_pembeli_aman = mysqli_real_escape_string($koneksi, $nama_pembeli);
 
+                    // simpan data transaksi
                     mysqli_query($koneksi, "UPDATE stok_agen SET stok = stok - $jumlah WHERE agen_id = $agen_id");
                     $query = "INSERT INTO transaksi (agen_id, nama_pembeli, jumlah, total_harga, bukti_transaksi, status) 
-                              VALUES ($agen_id, '$nama_pembeli_aman', $jumlah, $total, '$nama_file', 'pending_tl')";
+                              VALUES ($agen_id, '$nama_pembeli_aman', $jumlah, $total, '$nama_file', 'pending_admin')";
 
                     if (mysqli_query($koneksi, $query)) {
                         $pesan = ['type' => 'success', 'text' => 'Penjualan berhasil dicatat! Menunggu verifikasi admin.'];
@@ -54,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_sale'])) {
     }
 }
 
-// data stok agen
+// data stok tl
 $stok_data = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT stok FROM stok_agen WHERE agen_id = $agen_id"));
 $stok_saya = $stok_data ? $stok_data['stok'] : 0;
 // data produk
@@ -68,7 +69,7 @@ $recent_sales = mysqli_query($koneksi, "SELECT * FROM transaksi WHERE agen_id = 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Input Penjualan | Panel Agen</title>
+    <title>Input Penjualan | Panel Team Leader</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">

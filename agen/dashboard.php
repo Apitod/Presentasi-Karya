@@ -1,9 +1,4 @@
 <?php
-// ============================================================
-// FILE: agen/dashboard.php
-// FUNGSI: Dasbor Agen - Lengkap dengan Analitik Pribadi
-// ============================================================
-
 require_once 'cek_sesi.php';
 require_once '../koneksi.php';
 
