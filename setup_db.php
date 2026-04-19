@@ -1,5 +1,4 @@
 <?php
-// koneksi database
 $conn = mysqli_connect('localhost', 'belajarphp', '1379');
 
 if (!$conn) {
@@ -7,16 +6,13 @@ if (!$conn) {
 }
 
 
-// buat database
 $sql_create_db = "CREATE DATABASE IF NOT EXISTS presentasi_karya CHARACTER SET utf8 COLLATE utf8_general_ci";
 mysqli_query($conn, $sql_create_db);
 
-// Pilih database yang baru dibuat
 mysqli_select_db($conn, 'presentasi_karya');
 mysqli_set_charset($conn, "utf8");
 
 
-// buat tabel users
 $sql_users = "
 CREATE TABLE IF NOT EXISTS users (
     id           INT AUTO_INCREMENT PRIMARY KEY,
@@ -33,17 +29,8 @@ CREATE TABLE IF NOT EXISTS users (
 mysqli_query($conn, $sql_users);
 
 
-// migrasi tabel users
-
-// Langkah A: Ubah kolom 'role' agar mendukung nilai 'tl' (Team Leader)
-// MODIFY COLUMN aman dijalankan berulang kali
 mysqli_query($conn, "ALTER TABLE users MODIFY COLUMN role ENUM('admin', 'tl', 'agen') NOT NULL");
 
-
-// CATATAN TEKNIS: Sintaks "ADD COLUMN IF NOT EXISTS" hanya
-
-// Langkah B: Tambahkan kolom 'tl_id' jika belum ada
-// tl_id menyimpan ID Team Leader yang menaungi agen
 $cek_tl_id = mysqli_fetch_assoc(mysqli_query($conn,
     "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
      WHERE TABLE_SCHEMA = 'presentasi_karya'
@@ -51,12 +38,9 @@ $cek_tl_id = mysqli_fetch_assoc(mysqli_query($conn,
        AND COLUMN_NAME  = 'tl_id'"
 ));
 if (!$cek_tl_id) {
-    // Kolom belum ada, tambahkan sekarang
     mysqli_query($conn, "ALTER TABLE users ADD COLUMN tl_id INT NULL AFTER role");
 }
 
-// Langkah C: Tambahkan kolom 'poin' jika belum ada
-// poin adalah akumulasi reward yang diterima TL
 $cek_poin = mysqli_fetch_assoc(mysqli_query($conn,
     "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
      WHERE TABLE_SCHEMA = 'presentasi_karya'
@@ -64,7 +48,6 @@ $cek_poin = mysqli_fetch_assoc(mysqli_query($conn,
        AND COLUMN_NAME  = 'poin'"
 ));
 if (!$cek_poin) {
-    // Kolom belum ada, tambahkan sekarang
     mysqli_query($conn, "ALTER TABLE users ADD COLUMN poin INT DEFAULT 0 AFTER tl_id");
 }
 
@@ -126,7 +109,6 @@ mysqli_query($conn, "ALTER TABLE transaksi MODIFY COLUMN bukti_transaksi VARCHAR
 // Catatan: Query ini aman dijalankan berulang kali (tidak merusak data)
 
 
-// seeding data awal
 
 // Migrasi untuk status transaksi (menambahkan pending_tl dan pending_admin)
 mysqli_query($conn, "ALTER TABLE transaksi MODIFY COLUMN status ENUM('pending_tl', 'pending_admin', 'approved', 'rejected') DEFAULT 'pending_tl'");
